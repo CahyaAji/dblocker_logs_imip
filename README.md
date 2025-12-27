@@ -1,0 +1,1 @@
+podman run -d --name dblocker-db -e POSTGRES_USER=scm -e POSTGRES_PASSWORD=Menoreh01! -e POSTGRES_DB=dblcoker_logs -p 5433:5432 postgres:18.1

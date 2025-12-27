@@ -1,0 +1,15 @@
+### 1. Register a new device
+POST http://localhost:5000/devices
+Content-Type: application/json
+
+{
+    "name": "Drone Blocker Utara",
+    "type": "jammer",
+    "ip_address": "localhost:3002",
+    "latitude": -7.7500,
+    "longitude": 107.5000,
+    "description": "Drone blocker di Utara"
+}
+
+### 2. Get All Devices
+GET http://localhost:5000/devices
