@@ -3,12 +3,12 @@ POST http://localhost:5000/devices
 Content-Type: application/json
 
 {
-    "name": "Drone Blocker Utara",
+    "name": "Drone Blocker Barat",
     "type": "jammer",
-    "ip_address": "localhost:3002",
+    "ip_address": "localhost:3003",
     "latitude": -7.7500,
-    "longitude": 107.5000,
-    "description": "Drone blocker di Utara"
+    "longitude": 101.0000,
+    "description": "Drone blocker di Barat"
 }
 
 ### 2. Get All Devices
