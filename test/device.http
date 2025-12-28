@@ -2,16 +2,52 @@
 POST http://localhost:3003/devices
 Content-Type: application/json
 
+# {
+#     "name": "Drone Blocker Barat",
+#     "type": "jammer",
+#     "ip_address": "localhost:3011",
+#     "latitude": -7.89714275152239,
+#     "longitude": 110.03435936894792,
+#     "description": "Drone blocker di Barat"
+# }
+
+# {
+#     "name": "Drone Blocker Utara",
+#     "type": "jammer",
+#     "ip_address": "localhost:3013",
+#     "latitude": -7.886506370117147,
+#     "longitude": 110.063932710787,
+#     "description": "Drone blocker di Utara"
+# }
+
 {
-    "name": "Drone Blocker Barat",
+    "name": "Drone Blocker Timur",
     "type": "jammer",
-    "ip_address": "localhost:3011",
-    "latitude": -7.89714275152239,
-    "longitude": 110.03435936894792,
-    "description": "Drone blocker di Barat"
+    "ip_address": "localhost:3013",
+    "latitude": -7.9143066096240355,
+    "longitude": 110.07972555662852,
+    "description": "Drone blocker di Timur"
 }
 
-, 
 
 ### 2. Get All Devices
 GET http://localhost:3003/devices
+
+### 3. Get by id
+GET http://localhost:3003/devices/1
+
+### 4. Update by id
+PUT http://localhost:3003/devices/2
+Content-Type: application/json
+
+{
+    "name": "Drone Blocker Utara",
+    "type": "jammer",
+    "ip_address": "localhost:3012",
+    "latitude": -7.886506370117147,
+    "longitude": 110.063932710787,
+    "description": "Drone blocker di Utara"
+}
+
+### 5. Delete by id
+DELETE http://localhost:3003/devices/3

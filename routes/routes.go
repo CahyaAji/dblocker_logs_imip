@@ -17,6 +17,9 @@ func SetupRouter(db *gorm.DB) *gin.Engine {
 
 	r.POST("/devices", deviceHandler.CreateDevice)
 	r.GET("/devices", deviceHandler.GetDevices)
+	r.GET("/devices/:id", deviceHandler.GetDeviceByID)
+	r.PUT("/devices/:id", deviceHandler.UpdateDevice)
+	r.DELETE("/devices/:id", deviceHandler.DeleteDevice)
 
 	return r
 }

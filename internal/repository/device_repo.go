@@ -23,3 +23,17 @@ func (r *DeviceRepository) FindAll() ([]models.Device, error) {
 	err := r.DB.Find(&devices).Error
 	return devices, err
 }
+
+func (r *DeviceRepository) FindByID(id uint) (*models.Device, error) {
+	var device models.Device
+	err := r.DB.First(&device, id).Error
+	return &device, err
+}
+
+func (r *DeviceRepository) Delete(id uint) error {
+	return r.DB.Delete(&models.Device{}, id).Error
+}
+
+func (r *DeviceRepository) Update(device *models.Device) error {
+	return r.DB.Save(device).Error
+}
