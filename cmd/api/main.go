@@ -15,5 +15,5 @@ func main() {
 	}
 
 	route := routes.SetupRouter(db)
-	route.Run(":5000")
+	route.Run(":3003")
 }
