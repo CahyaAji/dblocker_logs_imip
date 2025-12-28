@@ -24,7 +24,7 @@ func NewPostgresDB() (*gorm.DB, error) {
 	}
 	dbname := os.Getenv("DB_NAME")
 	if dbname == "" {
-		dbname = "dblocker_logs"
+		dbname = "dblcoker_logs"
 	}
 	port := os.Getenv("DB_PORT")
 	if port == "" {
