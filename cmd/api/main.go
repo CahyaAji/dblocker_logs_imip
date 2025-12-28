@@ -4,6 +4,7 @@ import (
 	"dblocker_logs_server/internal/database"
 	"dblocker_logs_server/routes"
 	"log"
+	"os"
 )
 
 func main() {
@@ -15,5 +16,9 @@ func main() {
 	}
 
 	route := routes.SetupRouter(db)
-	route.Run(":3003")
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "3003"
+	}
+	route.Run(":" + port)
 }
