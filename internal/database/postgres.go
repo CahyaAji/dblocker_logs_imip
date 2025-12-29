@@ -24,18 +24,22 @@ func NewPostgresDB() (*gorm.DB, error) {
 	}
 	dbname := os.Getenv("DB_NAME")
 	if dbname == "" {
-		dbname = "dblcoker_logs"
+		dbname = "dblocker_logs"
 	}
 	port := os.Getenv("DB_PORT")
 	if port == "" {
-		port = "5433"
+		port = "5432"
 	}
 	sslmode := os.Getenv("DB_SSLMODE")
 	if sslmode == "" {
 		sslmode = "disable"
 	}
+	timezone := os.Getenv("DB_TIMEZONE")
+	if timezone == "" {
+		timezone = "UTC"
+	}
 
-	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=%s", host, user, password, dbname, port, sslmode)
+	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=%s TimeZone=%s", host, user, password, dbname, port, sslmode, timezone)
 
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
