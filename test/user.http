@@ -1,0 +1,31 @@
+### 1. Register a new user
+POST http://localhost:3003/users
+Content-Type: application/json
+
+{
+    "email": "coba@email.com",
+    "password": "password123",
+    "name": "Coba Hapus",
+    "number_id": "123456"
+}
+
+### 2. Get all users
+GET http://localhost:3003/users
+
+### 3. Get by id
+GET http://localhost:3003/users/1
+
+### 4. Update by id
+PUT http://localhost:3003/users/1
+Content-Type: application/json
+
+{
+    "email": "jhon@email.com",
+    "password": "password123",
+    "name": "John Doe",
+    "number_id": "123456",
+    "role": "user"
+}
+
+### 5. Delete by id
+DELETE http://localhost:3003/users/4

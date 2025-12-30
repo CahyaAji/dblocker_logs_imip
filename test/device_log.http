@@ -1,0 +1,62 @@
+### 1. Create New device log
+POST http://localhost:3003/device-logs
+Content-Type: application/json
+
+{
+    "device_id": 2,
+    "device_name": "device Utaras",
+    "is_online": true,
+    "status": {
+        "sector1": [1, 1],
+        "sector2": [1, 0],
+        "sector3": [0, 1],
+        "sector4": [1, 0],
+        "sector5": [1, 0],
+        "sector6": [0, 0],
+        "fan": 1
+    },
+    "sensors": {
+        "sector1": [530, 530, 600],
+        "sector2": [530, 530, 600],
+        "sector3": [530, 530, 600],
+        "sector4": [530, 530, 600],
+        "sector5": [530, 530, 600],
+        "sector6": [530, 530, 600]
+    }
+}
+
+### 2. Get all device logs
+GET http://localhost:3003/device-logs
+
+### 3. Get device logs by id
+GET http://localhost:3003/device-logs/1
+
+### 4. Delete device logs by id
+DELETE http://localhost:3003/device-logs/2
+
+### 5. Update device logs by id
+PUT http://localhost:3003/device-logs/1
+Content-Type: application/json
+
+{
+    "device_id": 2,
+    "device_name": "device Utara",
+    "is_online": true,
+    "status": {
+        "sector1": [1, 1],
+        "sector2": [1, 0],
+        "sector3": [0, 1],
+        "sector4": [1, 0],
+        "sector5": [1, 0],
+        "sector6": [0, 0],
+        "fan": 1
+    },
+    "sensors": {
+        "sector1": [530, 530, 600],
+        "sector2": [530, 530, 600],
+        "sector3": [530, 530, 600],
+        "sector4": [530, 530, 600],
+        "sector5": [530, 530, 600],
+        "sector6": [530, 530, 600]
+    }
+}
