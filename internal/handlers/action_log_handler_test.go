@@ -72,8 +72,8 @@ func TestCreateActionLog(t *testing.T) {
 		UserID:   101,
 		UserName: "admin",
 		Action:   "REBOOT",
-		Success:  true,
-		Detail:   datatypes.JSON([]byte(`{"reason": "maintenance"}`)),
+		// Success:  true,
+		Detail: datatypes.JSON([]byte(`{"reason": "maintenance"}`)),
 	}
 	jsonBytes, _ := json.Marshal(input)
 
