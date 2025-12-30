@@ -14,10 +14,12 @@ func SetupRouter(db *gorm.DB) *gin.Engine {
 	deviceRepo := repository.NewDeviceRepository(db)
 	actionLogRepo := repository.NewActionLogRepository(db)
 	deviceLogRepo := repository.NewDeviceLogRepository(db)
+	userRepo := repository.NewUserRepository(db)
 
 	deviceHandler := handlers.NewDeviceHandler(deviceRepo)
 	actionLogHandler := handlers.NewActionLogHandler(actionLogRepo)
 	deviceLogHandler := handlers.NewDeviceLogHandler(deviceLogRepo)
+	userHandler := handlers.NewUserHandler(userRepo)
 
 	r.POST("/devices", deviceHandler.CreateDevice)
 	r.GET("/devices", deviceHandler.GetDevices)
@@ -36,6 +38,13 @@ func SetupRouter(db *gorm.DB) *gin.Engine {
 	r.GET("/device-logs/:id", deviceLogHandler.GetDeviceLogByID)
 	r.PUT("/device-logs/:id", deviceLogHandler.UpdateDeviceLog)
 	r.DELETE("/device-logs/:id", deviceLogHandler.DeleteDeviceLog)
+
+	r.POST("/users", userHandler.CreateUser)
+	r.GET("/users", userHandler.GetUsers)
+	r.GET("/users/:id", userHandler.GetUserByID)
+	r.PUT("/users/:id", userHandler.UpdateUser)
+	r.DELETE("/users/:id", userHandler.DeleteUser)
+	//get user by email
 
 	return r
 }
