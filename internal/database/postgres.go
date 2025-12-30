@@ -19,9 +19,6 @@ func NewPostgresDB() (*gorm.DB, error) {
 		user = "scm"
 	}
 	password := os.Getenv("DB_PASSWORD")
-	if password == "" {
-		password = "Menoreh01!"
-	}
 	dbname := os.Getenv("DB_NAME")
 	if dbname == "" {
 		dbname = "dblocker_logs"
@@ -46,7 +43,7 @@ func NewPostgresDB() (*gorm.DB, error) {
 		return nil, err
 	}
 
-	err = db.AutoMigrate(&models.Device{}, &models.DeviceLog{}, &models.ActionLog{})
+	err = db.AutoMigrate(&models.Device{}, &models.User{}, &models.DeviceLog{}, &models.ActionLog{})
 	if err != nil {
 		return nil, err
 	}
