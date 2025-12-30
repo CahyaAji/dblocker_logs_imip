@@ -90,6 +90,6 @@ func TestCreateActionLog(t *testing.T) {
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, req)
 
-	assert.Equal(t, http.StatusOK, w.Code)
+	assert.Equal(t, http.StatusCreated, w.Code)
 	assert.Nil(t, mock.ExpectationsWereMet())
 }
