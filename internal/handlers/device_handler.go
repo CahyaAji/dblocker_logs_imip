@@ -29,7 +29,7 @@ func (h *DeviceHandler) CreateDevice(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"data": input})
+	c.JSON(http.StatusCreated, gin.H{"data": input})
 }
 
 func (h *DeviceHandler) GetDevices(c *gin.Context) {
@@ -45,7 +45,7 @@ func (h *DeviceHandler) GetDevices(c *gin.Context) {
 func (h *DeviceHandler) GetDeviceByID(c *gin.Context) {
 	idParam := c.Param("id")
 
-	id, err := strconv.Atoi(idParam)
+	id, err := strconv.ParseUint(idParam, 10, 64)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID"})
 		return
@@ -61,24 +61,9 @@ func (h *DeviceHandler) GetDeviceByID(c *gin.Context) {
 
 }
 
-func (h *DeviceHandler) DeleteDevice(c *gin.Context) {
-	idParam := c.Param("id")
-	id, err := strconv.Atoi(idParam)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid ID format"})
-		return
-	}
-	if err := h.Repo.Delete(uint(id)); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-	c.JSON(http.StatusOK, gin.H{"message": "Device deleted successfully"})
-
-}
-
 func (h *DeviceHandler) UpdateDevice(c *gin.Context) {
 	idParam := c.Param("id")
-	id, err := strconv.Atoi(idParam)
+	id, err := strconv.ParseUint(idParam, 10, 64)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid ID format"})
 		return
@@ -90,13 +75,26 @@ func (h *DeviceHandler) UpdateDevice(c *gin.Context) {
 		return
 	}
 
-	// Ensure we are updating the device specified in the URL
 	input.ID = uint(id)
 
 	if err := h.Repo.Update(&input); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-
 	c.JSON(http.StatusOK, gin.H{"data": input})
+}
+
+func (h *DeviceHandler) DeleteDevice(c *gin.Context) {
+	idParam := c.Param("id")
+	id, err := strconv.ParseUint(idParam, 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid ID format"})
+		return
+	}
+	if err := h.Repo.Delete(uint(id)); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "Device deleted successfully"})
+
 }

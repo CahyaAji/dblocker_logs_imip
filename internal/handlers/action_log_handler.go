@@ -29,7 +29,7 @@ func (h *ActionLogHandler) CreateActionLog(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"data": input})
+	c.JSON(http.StatusCreated, gin.H{"data": input})
 }
 
 func (h *ActionLogHandler) GetActionLogs(c *gin.Context) {
@@ -44,7 +44,7 @@ func (h *ActionLogHandler) GetActionLogs(c *gin.Context) {
 
 func (h *ActionLogHandler) GetActionLogByID(c *gin.Context) {
 	idParam := c.Param("id")
-	id, err := strconv.Atoi(idParam)
+	id, err := strconv.ParseUint(idParam, 10, 64)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid ID format"})
 		return
@@ -61,7 +61,7 @@ func (h *ActionLogHandler) GetActionLogByID(c *gin.Context) {
 
 func (h *ActionLogHandler) UpdateActionLog(c *gin.Context) {
 	idParam := c.Param("id")
-	id, err := strconv.Atoi(idParam)
+	id, err := strconv.ParseUint(idParam, 10, 64)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID"})
 		return
@@ -85,7 +85,7 @@ func (h *ActionLogHandler) UpdateActionLog(c *gin.Context) {
 
 func (h *ActionLogHandler) DeleteActionLog(c *gin.Context) {
 	idParam := c.Param("id")
-	id, err := strconv.Atoi(idParam)
+	id, err := strconv.ParseUint(idParam, 10, 64)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID"})
 		return

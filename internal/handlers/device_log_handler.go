@@ -29,7 +29,7 @@ func (h *DeviceLogHandler) CreateDeviceLog(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"data": input})
+	c.JSON(http.StatusCreated, gin.H{"data": input})
 }
 
 func (h *DeviceLogHandler) GetDeviceLogs(c *gin.Context) {
@@ -44,7 +44,7 @@ func (h *DeviceLogHandler) GetDeviceLogs(c *gin.Context) {
 
 func (h *DeviceLogHandler) GetDeviceLogByID(c *gin.Context) {
 	idParam := c.Param("id")
-	id, err := strconv.Atoi(idParam)
+	id, err := strconv.ParseUint(idParam, 10, 64)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid ID format"})
 		return
@@ -61,7 +61,7 @@ func (h *DeviceLogHandler) GetDeviceLogByID(c *gin.Context) {
 
 func (h *DeviceLogHandler) UpdateDeviceLog(c *gin.Context) {
 	idParam := c.Param("id")
-	id, err := strconv.Atoi(idParam)
+	id, err := strconv.ParseUint(idParam, 10, 64)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID"})
 		return
@@ -84,7 +84,7 @@ func (h *DeviceLogHandler) UpdateDeviceLog(c *gin.Context) {
 
 func (h *DeviceLogHandler) DeleteDeviceLog(c *gin.Context) {
 	idParam := c.Param("id")
-	id, err := strconv.Atoi(idParam)
+	id, err := strconv.ParseUint(idParam, 10, 64)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID"})
 		return
