@@ -8,4 +8,5 @@ type Device struct {
 	Latitude    float64 `json:"latitude"`                      // e.g., -7.797
 	Longitude   float64 `json:"longitude"`                     // e.g., 110.370
 	Description string  `json:"description"`                   // Notes about the device
+	SerialNumb  string  `json:"serial_numb"`
 }
