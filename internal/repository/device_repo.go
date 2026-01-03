@@ -30,6 +30,12 @@ func (r *DeviceRepository) FindByID(id uint) (*models.Device, error) {
 	return &device, err
 }
 
+func (r *DeviceRepository) FindByIDs(ids []uint) ([]models.Device, error) {
+	var devices []models.Device
+	err := r.DB.Find(&devices, ids).Error
+	return devices, err
+}
+
 func (r *DeviceRepository) Delete(id uint) error {
 	return r.DB.Delete(&models.Device{}, id).Error
 }
