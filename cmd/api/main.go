@@ -2,7 +2,7 @@ package main
 
 import (
 	"dblocker_logs_server/internal/database"
-	"dblocker_logs_server/internal/mqtt_client"
+	"dblocker_logs_server/internal/infrastructure/mqtt"
 	"dblocker_logs_server/routes"
 	"log"
 	"os"
@@ -21,10 +21,16 @@ func main() {
 		mqttBroker = "tcp://localhost:1883"
 	}
 
-	mqttClient, err := mqtt_client.NewMqttClient(mqttBroker, "dblocker-server")
+	// mqttClient, err := mqtt_client.NewMqttClient(mqttBroker, "dblocker-server")
+	// if err != nil {
+	// 	log.Printf("Failed to connect to MQTT broker: %v", err)
+	// }
+
+	mqttClient, err := mqtt.New(mqttBroker, "dblocker-server")
 	if err != nil {
 		log.Printf("Failed to connect to MQTT broker: %v", err)
 	}
+	defer mqttClient.Close()
 
 	route := routes.SetupRouter(db, mqttClient)
 	port := os.Getenv("PORT")
