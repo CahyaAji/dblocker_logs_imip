@@ -2,14 +2,14 @@ package routes
 
 import (
 	"dblocker_logs_server/internal/handlers"
-	"dblocker_logs_server/internal/mqtt_client"
+	"dblocker_logs_server/internal/infrastructure/mqtt"
 	"dblocker_logs_server/internal/repository"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )
 
-func SetupRouter(db *gorm.DB, mqttClient *mqtt_client.MqttClient) *gin.Engine {
+func SetupRouter(db *gorm.DB, mqttClient mqtt.Client) *gin.Engine {
 	r := gin.Default()
 
 	deviceRepo := repository.NewDeviceRepository(db)
@@ -17,7 +17,7 @@ func SetupRouter(db *gorm.DB, mqttClient *mqtt_client.MqttClient) *gin.Engine {
 	deviceLogRepo := repository.NewDeviceLogRepository(db)
 	userRepo := repository.NewUserRepository(db)
 
-	commandHandler := handlers.NewCommandHandler(mqttClient, deviceRepo)
+	// commandHandler := handlers.NewCommandHandler(mqttClient, deviceRepo)
 
 	deviceHandler := handlers.NewDeviceHandler(deviceRepo)
 	actionLogHandler := handlers.NewActionLogHandler(actionLogRepo)
@@ -30,7 +30,7 @@ func SetupRouter(db *gorm.DB, mqttClient *mqtt_client.MqttClient) *gin.Engine {
 	r.PUT("/devices/:id", deviceHandler.UpdateDevice)
 	r.DELETE("/devices/:id", deviceHandler.DeleteDevice)
 
-	r.POST("/commands", commandHandler.ExecuteCommand)
+	// r.POST("/commands", commandHandler.ExecuteCommand)
 
 	r.POST("/action-logs", actionLogHandler.CreateActionLog)
 	r.GET("/action-logs", actionLogHandler.GetActionLogs)

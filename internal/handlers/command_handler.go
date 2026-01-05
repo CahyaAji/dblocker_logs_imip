@@ -2,8 +2,8 @@ package handlers
 
 import (
 	"dblocker_logs_server/internal/models"
-	"dblocker_logs_server/internal/mqtt_client"
 	"dblocker_logs_server/internal/repository"
+	mqtt_client "dblocker_logs_server/internal/service"
 	"encoding/json"
 	"errors"
 	"fmt"
