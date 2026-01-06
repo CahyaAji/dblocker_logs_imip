@@ -8,25 +8,28 @@ Content-Type: application/json
 #     "ip_address": "localhost:3011",
 #     "latitude": -7.89714275152239,
 #     "longitude": 110.03435936894792,
-#     "description": "Drone blocker di Barat"
+#     "description": "Drone blocker di Barat",
+#     "serial_numb": "1002"
 # }
 
 # {
 #     "name": "Drone Blocker Utara",
 #     "type": "jammer",
-#     "ip_address": "localhost:3013",
+#     "ip_address": "localhost:3012",
 #     "latitude": -7.886506370117147,
 #     "longitude": 110.063932710787,
-#     "description": "Drone blocker di Utara"
+#     "description": "Drone blocker di Utara",
+#     "serial_numb": "1003"
 # }
 
 {
     "name": "Drone Blocker Timur",
     "type": "jammer",
-    "ip_address": "localhost:3013",
+    "ip_address": "localhost:3010",
     "latitude": -7.9143066096240355,
     "longitude": 110.07972555662852,
-    "description": "Drone blocker di Timur"
+    "description": "Drone blocker di Timur",
+    "serial_numb": "1001"
 }
 
 
@@ -50,4 +53,4 @@ Content-Type: application/json
 }
 
 ### 5. Delete by id
-DELETE http://localhost:3003/devices/3
+DELETE http://localhost:3003/devices/1

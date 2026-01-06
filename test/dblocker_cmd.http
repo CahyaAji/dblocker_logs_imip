@@ -1,0 +1,14 @@
+### 1. Get All Devices
+GET http://localhost:3003/devices
+
+### 2 turn on and off
+POST http://localhost:3003/commands
+Content-Type: application/json
+
+[
+    {
+        "device_id": 7,
+        "command": [1, 0, 0]
+    }
+
+]
