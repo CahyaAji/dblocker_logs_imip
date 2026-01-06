@@ -4,10 +4,10 @@ import (
 	"dblocker_logs_server/internal/infrastructure/mqtt"
 	"dblocker_logs_server/internal/models"
 	"dblocker_logs_server/internal/repository"
-	"encoding/json"
 	"fmt"
 	"net/http"
-	"time"
+	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -48,21 +48,29 @@ func (h *DeviceControlHandler) ExecuteCommand(c *gin.Context) {
 		return
 	}
 
+	// Validate all devices exist before processing any command
+	deviceMap := make(map[uint]*models.Device)
+	for _, cmd := range req {
+		if _, exists := deviceMap[cmd.DeviceID]; exists {
+			continue
+		}
+		device, err := h.deviceRepo.FindByID(cmd.DeviceID)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("device id %d not found, operation cancelled", cmd.DeviceID)})
+			return
+		}
+		deviceMap[cmd.DeviceID] = device
+	}
+
 	resultsChan := make(chan DeviceCmdResponse, len(req))
 
 	for _, cmd := range req {
 		go func(dc DeviceCmd) {
 			result := DeviceCmdResponse{DeviceID: dc.DeviceID}
-
-			device, err := h.deviceRepo.FindByID(dc.DeviceID)
-			if err != nil {
-				result.Status, result.Error = "error", fmt.Sprintf("device not found: %v", err)
-				resultsChan <- result
-				return
-			}
+			device := deviceMap[dc.DeviceID]
 
 			var resp string
-			err = h.sendCmd(device, dc.Command)
+			err := h.sendCmd(device, dc.Command)
 			resp = "command published"
 
 			if err != nil {
@@ -85,13 +93,14 @@ func (h *DeviceControlHandler) ExecuteCommand(c *gin.Context) {
 
 func (h *DeviceControlHandler) sendCmd(device *models.Device, command []int) error {
 	cmdTopic := fmt.Sprintf("dblocker/cmd/%s", device.SerialNumb)
-	payload := map[string]any{
-		"command": command,
-		"ts":      time.Now().Unix(),
-	}
-	payloadBytes, _ := json.Marshal(payload)
 
-	return h.MqttClient.Publish(cmdTopic, 1, false, payloadBytes)
+	var strValues []string
+	for _, v := range command {
+		strValues = append(strValues, strconv.Itoa(v))
+	}
+	payloadStr := strings.Join(strValues, ",")
+
+	return h.MqttClient.Publish(cmdTopic, 1, false, []byte(payloadStr))
 }
 
 // func (h *CommandHandler) sendCommandWithResponse(device *models.Device, command []int) (string, error) {
