@@ -34,3 +34,18 @@ podman run -d \
   -v ~/Files/dev101/mosquitto/log:/mosquitto/log:Z \
   eclipse-mosquitto:2.0.22
 ```
+
+mosquitto.conf
+```
+# Allow connections from outside the container
+listener 1883
+allow_anonymous true
+
+# Persistence settings
+persistence true
+persistence_location /mosquitto/data/
+
+# Logging
+log_dest file /mosquitto/log/mosquitto.log
+log_dest stdout
+```
