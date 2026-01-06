@@ -128,7 +128,10 @@ func (h *CommandHandler) sendCommandWithResponse(device *models.Device, command 
 	// want specific marshaling, we can pass bytes. However, the wrapper accepts interface{}.
 	// Let's pass the bytes to be safe with existing logic, or pass the map if the wrapper handles it.
 	// The wrapper passes interface{} to paho, which handles []byte.
-	payloadBytes, _ := json.Marshal(payload)
+	payloadBytes, err := json.Marshal(payload)
+	if err != nil {
+		return "", fmt.Errorf("failed to marshal payload: %v", err)
+	}
 	if err := h.MqttClient.Publish(cmdTopic, payloadBytes); err != nil {
 		return "", fmt.Errorf("failed to publish: %v", err)
 	}
@@ -151,7 +154,10 @@ func (h *CommandHandler) sendCommandNoResponse(device *models.Device, command []
 		"command": command,
 		"ts":      time.Now().Format(time.RFC3339),
 	}
-	payloadBytes, _ := json.Marshal(payload)
+	payloadBytes, err := json.Marshal(payload)
+	if err != nil {
+		return fmt.Errorf("failed to marshal payload: %v", err)
+	}
 
 	if err := h.MqttClient.Publish(cmdTopic, payloadBytes); err != nil {
 		return fmt.Errorf("failed to publish: %v", err)
