@@ -18,21 +18,18 @@ func main() {
 
 	mqttBroker := os.Getenv("MQTT_BROKER")
 	if mqttBroker == "" {
-		mqttBroker = "tcp://localhost:1883"
+		mqttBroker = "tcp://148.230.101.142:1883"
 	}
-
-	// mqttClient, err := mqtt_client.NewMqttClient(mqttBroker, "dblocker-server")
-	// if err != nil {
-	// 	log.Printf("Failed to connect to MQTT broker: %v", err)
-	// }
 
 	mqttClient, err := mqtt.New(mqttBroker, "dblocker-server")
 	if err != nil {
 		log.Printf("Failed to connect to MQTT broker: %v", err)
 	}
+
 	defer mqttClient.Close()
 
 	route := routes.SetupRouter(db, mqttClient)
+	// route := routes.SetupRouter(db)
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "3003"
