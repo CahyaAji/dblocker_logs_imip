@@ -17,7 +17,7 @@ func SetupRouter(db *gorm.DB, mqttClient mqtt.Client) *gin.Engine {
 	deviceLogRepo := repository.NewDeviceLogRepository(db)
 	userRepo := repository.NewUserRepository(db)
 
-	// commandHandler := handlers.NewCommandHandler(mqttClient, deviceRepo)
+	deviceControlHandler := handlers.NewDeviceControlHandler(mqttClient, deviceRepo)
 
 	deviceHandler := handlers.NewDeviceHandler(deviceRepo)
 	actionLogHandler := handlers.NewActionLogHandler(actionLogRepo)
@@ -30,7 +30,7 @@ func SetupRouter(db *gorm.DB, mqttClient mqtt.Client) *gin.Engine {
 	r.PUT("/devices/:id", deviceHandler.UpdateDevice)
 	r.DELETE("/devices/:id", deviceHandler.DeleteDevice)
 
-	// r.POST("/commands", commandHandler.ExecuteCommand)
+	r.POST("/commands", deviceControlHandler.ExecuteCommand)
 
 	r.POST("/action-logs", actionLogHandler.CreateActionLog)
 	r.GET("/action-logs", actionLogHandler.GetActionLogs)
