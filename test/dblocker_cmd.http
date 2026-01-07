@@ -7,8 +7,8 @@ Content-Type: application/json
 
 [
     {
-        "device_id": 7,
-        "command": [1, 0, 0]
+        "device_id": 1,
+        "command": [1, 0, 0, 0]
     }
 
 ]

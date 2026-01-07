@@ -2,15 +2,15 @@
 POST http://localhost:3003/devices
 Content-Type: application/json
 
-# {
-#     "name": "Drone Blocker Barat",
-#     "type": "jammer",
-#     "ip_address": "localhost:3011",
-#     "latitude": -7.89714275152239,
-#     "longitude": 110.03435936894792,
-#     "description": "Drone blocker di Barat",
-#     "serial_numb": "1002"
-# }
+{
+    "name": "Drone Blocker Barat",
+    "type": "jammer",
+    "ip_address": "localhost:3011",
+    "latitude": -7.89714275152239,
+    "longitude": 110.03435936894792,
+    "description": "Drone blocker di Barat",
+    "serial_numb": "1002"
+}
 
 # {
 #     "name": "Drone Blocker Utara",
@@ -22,15 +22,15 @@ Content-Type: application/json
 #     "serial_numb": "1003"
 # }
 
-{
-    "name": "Drone Blocker Timur",
-    "type": "jammer",
-    "ip_address": "localhost:3010",
-    "latitude": -7.9143066096240355,
-    "longitude": 110.07972555662852,
-    "description": "Drone blocker di Timur",
-    "serial_numb": "1001"
-}
+# {
+#     "name": "Drone Blocker Timur",
+#     "type": "jammer",
+#     "ip_address": "localhost:3010",
+#     "latitude": -7.9143066096240355,
+#     "longitude": 110.07972555662852,
+#     "description": "Drone blocker di Timur",
+#     "serial_numb": "1001"
+# }
 
 
 ### 2. Get All Devices
