@@ -12,6 +12,8 @@ import (
 func SetupRouter(db *gorm.DB, mqttClient mqtt.Client) *gin.Engine {
 	r := gin.Default()
 
+	api := r.Group("/api")
+
 	deviceRepo := repository.NewDeviceRepository(db)
 	actionLogRepo := repository.NewActionLogRepository(db)
 	deviceLogRepo := repository.NewDeviceLogRepository(db)
@@ -24,32 +26,36 @@ func SetupRouter(db *gorm.DB, mqttClient mqtt.Client) *gin.Engine {
 	deviceLogHandler := handlers.NewDeviceLogHandler(deviceLogRepo)
 	userHandler := handlers.NewUserHandler(userRepo)
 
-	r.POST("/devices", deviceHandler.CreateDevice)
-	r.GET("/devices", deviceHandler.GetDevices)
-	r.GET("/devices/:id", deviceHandler.GetDeviceByID)
-	r.PUT("/devices/:id", deviceHandler.UpdateDevice)
-	r.DELETE("/devices/:id", deviceHandler.DeleteDevice)
+	// Devices
+	api.POST("/devices", deviceHandler.CreateDevice)
+	api.GET("/devices", deviceHandler.GetDevices)
+	api.GET("/devices/:id", deviceHandler.GetDeviceByID)
+	api.PUT("/devices/:id", deviceHandler.UpdateDevice)
+	api.DELETE("/devices/:id", deviceHandler.DeleteDevice)
 
-	r.POST("/commands", deviceControlHandler.ExecuteCommand)
+	// Commands
+	api.POST("/commands", deviceControlHandler.ExecuteCommand)
 
-	r.POST("/action-logs", actionLogHandler.CreateActionLog)
-	r.GET("/action-logs", actionLogHandler.GetActionLogs)
-	r.GET("/action-logs/:id", actionLogHandler.GetActionLogByID)
-	r.PUT("/action-logs/:id", actionLogHandler.UpdateActionLog)
-	r.DELETE("/action-logs/:id", actionLogHandler.DeleteActionLog)
+	// Action logs
+	api.POST("/action-logs", actionLogHandler.CreateActionLog)
+	api.GET("/action-logs", actionLogHandler.GetActionLogs)
+	api.GET("/action-logs/:id", actionLogHandler.GetActionLogByID)
+	api.PUT("/action-logs/:id", actionLogHandler.UpdateActionLog)
+	api.DELETE("/action-logs/:id", actionLogHandler.DeleteActionLog)
 
-	r.POST("/device-logs", deviceLogHandler.CreateDeviceLog)
-	r.GET("/device-logs", deviceLogHandler.GetDeviceLogs)
-	r.GET("/device-logs/:id", deviceLogHandler.GetDeviceLogByID)
-	r.PUT("/device-logs/:id", deviceLogHandler.UpdateDeviceLog)
-	r.DELETE("/device-logs/:id", deviceLogHandler.DeleteDeviceLog)
+	// Device logs
+	api.POST("/device-logs", deviceLogHandler.CreateDeviceLog)
+	api.GET("/device-logs", deviceLogHandler.GetDeviceLogs)
+	api.GET("/device-logs/:id", deviceLogHandler.GetDeviceLogByID)
+	api.PUT("/device-logs/:id", deviceLogHandler.UpdateDeviceLog)
+	api.DELETE("/device-logs/:id", deviceLogHandler.DeleteDeviceLog)
 
-	r.POST("/users", userHandler.CreateUser)
-	r.GET("/users", userHandler.GetUsers)
-	r.GET("/users/:id", userHandler.GetUserByID)
-	r.PUT("/users/:id", userHandler.UpdateUser)
-	r.DELETE("/users/:id", userHandler.DeleteUser)
-	//get user by email
+	// Users
+	api.POST("/users", userHandler.CreateUser)
+	api.GET("/users", userHandler.GetUsers)
+	api.GET("/users/:id", userHandler.GetUserByID)
+	api.PUT("/users/:id", userHandler.UpdateUser)
+	api.DELETE("/users/:id", userHandler.DeleteUser)
 
 	return r
 }
