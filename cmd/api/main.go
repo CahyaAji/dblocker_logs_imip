@@ -6,6 +6,8 @@ import (
 	"dblocker_logs_server/routes"
 	"log"
 	"os"
+
+	"github.com/gin-gonic/gin"
 )
 
 func main() {
@@ -30,6 +32,13 @@ func main() {
 
 	route := routes.SetupRouter(db, mqttClient)
 	// route := routes.SetupRouter(db)
+
+	route.Static("/assets", "./frontend/dist/assets")
+
+	route.GET("/dashboard", func(c *gin.Context) {
+		c.File("./frontend/dist/index.html")
+	})
+
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "3003"
