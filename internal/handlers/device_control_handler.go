@@ -92,7 +92,7 @@ func (h *DeviceControlHandler) ExecuteCommand(c *gin.Context) {
 }
 
 func (h *DeviceControlHandler) sendCmd(device *models.Device, command []int) error {
-	cmdTopic := fmt.Sprintf("dblocker/cmd/%s", device.SerialNumb)
+	cmdTopic := fmt.Sprintf("dblocker/%s/cmd", device.SerialNumb)
 
 	var strValues []string
 	for _, v := range command {
