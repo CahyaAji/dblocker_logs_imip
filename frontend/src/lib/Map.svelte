@@ -1,6 +1,6 @@
 <script lang="ts">
     import { onMount, onDestroy } from "svelte";
-    import maplibregl from "maplibre-gl";
+    import maplibregl, { config } from "maplibre-gl";
     import "maplibre-gl/dist/maplibre-gl.css";
 
     let mapContainer: HTMLElement;
@@ -20,11 +20,34 @@
             {
                 id: 1,
                 name: "Blocker tengah",
-                lng: 110.44053927286228,
-                lat: -7.777395993083473,
+                lng: 110.44053303318597,
+                lat: -7.777491824518677,
                 desc: "Drone Blocker Markas tengah",
-                isActive: true,
-                ringDegree: 360,
+                angleStart: 0,
+                config: [
+                    { signalCtrl: true, signalGPS: true },
+                    { signalCtrl: true, signalGPS: true },
+                    { signalCtrl: false, signalGPS: true },
+                    { signalCtrl: true, signalGPS: true },
+                    { signalCtrl: true, signalGPS: true },
+                    { signalCtrl: true, signalGPS: false },
+                ],
+            },
+            {
+                id: 2,
+                name: "Blocker random",
+                lng: 110.4406,
+                lat: -7.76,
+                desc: "Drone Blocker Markas random",
+                angleStart: 0,
+                config: [
+                    { signalCtrl: false, signalGPS: false },
+                    { signalCtrl: false, signalGPS: false },
+                    { signalCtrl: false, signalGPS: false },
+                    { signalCtrl: true, signalGPS: true },
+                    { signalCtrl: true, signalGPS: true },
+                    { signalCtrl: true, signalGPS: false },
+                ],
             },
         ];
     }
@@ -33,25 +56,59 @@
         data.forEach((loc) => {
             const el = document.createElement("div");
             el.className = "marker-gps";
+            el.style.cssText = `
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            `;
 
-            // 1. Pass the degree as a CSS Variable
-            el.style.setProperty("--ring-angle", `${loc.ringDegree || 360}deg`);
+            // initial rotation offset
+            const baseRotation = loc.angleStart || 0;
 
-            // 2. Handle the Active state (either via class or display)
-            if (loc.isActive === false) {
-                el.classList.add("inactive");
+            for (let i = 0; i < 6; i++) {
+                const angle = i * 60 + baseRotation;
+                for (let layer = 0; layer < 2; layer++) {
+                    const slice = document.createElement("div");
+
+                    const size = layer === 1 ? 50 : 80;
+
+                    slice.style.cssText = `
+                    position: absolute;
+                    width: ${size}px; height: ${size}px;
+                    background-color: ${layer === 1 ? "green" : "yellow"};
+                    border-radius: 50%;
+                    border: 1px solid red;
+                    pointer-events: none;
+                    --angle: ${angle}deg;
+                    top: 50%; left: 50%;
+                    transform: translate(-50%, -50%) rotate(var(--angle));
+                    clip-path: polygon(50% 50%, 100% 20%, 100% 80%);
+                    animation: zoom-pulse 2s infinite ease-in-out;
+                    `;
+
+                    // hide slice based on config
+                    if (loc.config[i].signalCtrl === false && layer === 0) {
+                        slice.style.display = "none";
+                    }
+
+                    if (loc.config[i].signalGPS === false && layer === 1) {
+                        slice.style.display = "none";
+                    }
+
+                    el.appendChild(slice);
+                }
             }
 
-            const popup = new maplibregl.Popup({ offset: 15 }).setHTML(
-                `<strong>${loc.name}</strong><p>${loc.desc}</p>`,
-            );
+            // Add the core
+            const core = document.createElement("div");
+            core.style.cssText =
+                "width: 24px; height: 24px; background: red; border: 2px solid white; border-radius: 50%; z-index: 2;";
+            el.appendChild(core);
 
-            const marker = new maplibregl.Marker({ element: el })
+            new maplibregl.Marker({ element: el })
                 .setLngLat([loc.lng, loc.lat])
-                .setPopup(popup)
                 .addTo(map);
-
-            markers.push(marker);
         });
     }
 
@@ -60,11 +117,10 @@
         map = new maplibregl.Map({
             container: mapContainer,
             style: MAP_STYLES.normal,
-            center: [110.44057776801604, -7.777334013872872],
+            center: [110.44053927286228, -7.777395993083473],
             zoom: 12,
         });
-
-        map.addControl(new maplibregl.NavigationControl(), "top-right");
+        map.addControl(new maplibregl.NavigationControl(), "top-left");
 
         // 2. Wait for the map to load its style
         map.on("load", async () => {
@@ -86,11 +142,9 @@
 </script>
 
 <div class="map-layout">
-    <div class="header">
-        <div class="controls">
-            <button on:click={() => switchStyle("normal")}>Normal</button>
-            <button on:click={() => switchStyle("hybrid")}>Satellite</button>
-        </div>
+    <div class="map-buttons">
+        <button on:click={() => switchStyle("normal")}>Normal</button>
+        <button on:click={() => switchStyle("hybrid")}>Satellite</button>
     </div>
     <div class="map-container" bind:this={mapContainer}></div>
 </div>
@@ -103,80 +157,29 @@
         overflow: hidden;
         border: 1px solid #ccc;
     }
-    .header {
-        padding: 10px;
-        background: transparent;
+
+    .map-buttons {
+        margin-left: 50px;
+        margin-top: 10px;
         display: flex;
-        justify-content: space-between;
-        align-items: center;
+        gap: 10px;
+        background-color: transparent;
         position: absolute;
         z-index: 1;
     }
+
+    button {
+        padding: 6px 12px;
+        border-radius: 6px;
+        border: solid 1px #ccc;
+        background-color: white;
+    }
+
+    button:active {
+        background-color: gray;
+    }
+
     .map-container {
         flex-grow: 1;
-    }
-    button {
-        padding: 5px 15px;
-        cursor: pointer;
-    }
-
-    :global(.marker-gps) {
-        width: 20px;
-        height: 20px;
-        background-color: red;
-        border: 2px solid white;
-        border-radius: 50%;
-        box-shadow: 0 0 8px rgba(0, 0, 0, 0.4);
-        cursor: pointer;
-        position: relative;
-    }
-
-    /* The pulsing ring/wedge */
-    :global(.marker-gps::after) {
-        content: "";
-        position: absolute;
-        /* Center it perfectly */
-        top: 50%;
-        left: 50%;
-        width: 60px;
-        height: 60px;
-        margin-top: -30px;
-        margin-left: -30px;
-
-        border-radius: 50%;
-
-        /* Use conic-gradient to create the partial arc */
-        /* --ring-angle is passed from JS */
-        background: conic-gradient(red var(--ring-angle), transparent 0deg);
-
-        /* Use a mask to make it a 'ring' instead of a 'pie slice' */
-        -webkit-mask-image: radial-gradient(circle, transparent 40%, black 41%);
-        mask-image: radial-gradient(circle, transparent 40%, black 41%);
-
-        /* Rotate by -90deg if you want the arc to start from the top center */
-        transform: rotate(-90deg) scale(1);
-        opacity: 0.4;
-        z-index: -1;
-    }
-
-    /* Apply animation only if NOT inactive */
-    :global(.marker-gps:not(.inactive)::after) {
-        animation: pulse 2s infinite;
-    }
-
-    /* Hide the ring entirely if inactive (optional) */
-    :global(.marker-gps.inactive::after) {
-        display: none;
-    }
-
-    @keyframes pulse {
-        0% {
-            transform: rotate(-90deg) scale(1); /* Keep rotation during scale */
-            opacity: 0.6;
-        }
-        100% {
-            transform: rotate(-90deg) scale(3);
-            opacity: 0;
-        }
     }
 </style>
