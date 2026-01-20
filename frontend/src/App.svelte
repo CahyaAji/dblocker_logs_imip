@@ -2,10 +2,10 @@
   import Map from "./lib/Map.svelte";
 
   let panelWidth = 300;
-  let isVisible = true;
+  let isExpanded = false;
   let isResizing = false;
 
-  const toggleSidebar = () => (isVisible = !isVisible);
+  const toggleSidebar = () => (isExpanded = !isExpanded);
 
   const startResize = (e: MouseEvent) => {
     isResizing = true;
@@ -26,38 +26,41 @@
 <svelte:window on:mousemove={handleMouseMove} on:mouseup={stopResize} />
 
 <div class="app-container">
-  <header>
-    <div class="logo">Drone Blocker</div>
-    <button
-      class="hamburger"
-      on:click={toggleSidebar}
-      aria-label="Toggle Sidebar"
-    >
-      ☰
-    </button>
-  </header>
-
   <main>
     <div class="map-area">
       <Map />
     </div>
 
-    {#if isVisible}
-      <button
-        type="button"
-        class="resizer"
-        class:active={isResizing}
-        on:mousedown={startResize}
-        aria-label="Resize sidebar"
-        tabindex="0"
-      ></button>
+    <div class="sidebar-wrapper">
+      {#if isExpanded}
+        <button
+          type="button"
+          class="resizer"
+          class:active={isResizing}
+          on:mousedown={startResize}
+          aria-label="Resize sidebar"
+          style="padding:0; border:none; background:none;"
+        ></button>
+      {/if}
 
-      <aside style="width: {panelWidth}px">
+      <aside
+        style={isExpanded ? `width: ${panelWidth}px` : "width: 50px"}
+        class:resizing={isResizing}
+      >
+        <div class="sidebar-header">
+          <button
+            class="hamburger"
+            on:click={toggleSidebar}
+            aria-label="Toggle Sidebar">☰</button
+          >
+        </div>
         <div class="sidebar-content">
-          <p>Ini menu samping</p>
+          {#if isExpanded}
+            <p>Ini menu samping</p>
+          {/if}
         </div>
       </aside>
-    {/if}
+    </div>
   </main>
 </div>
 
@@ -70,37 +73,11 @@
     overflow: hidden;
   }
 
-  header {
-    height: 40px;
-    background-color: lightgray;
-    color: black;
-    display: flex;
-    align-items: center;
-    font-size: 16pt;
-    justify-content: space-between;
-    padding: 0 20px;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-    z-index: 10;
-  }
-
-  .hamburger {
-    background: transparent;
-    border: 1px solid #666;
-    color: black;
-    font-size: 1.5rem;
-    cursor: pointer;
-    padding: 0 4px;
-    border-radius: 4px;
-  }
-
-  .hamburger:hover {
-    background: #444;
-  }
-
   main {
     display: flex;
     flex: 1;
     overflow: hidden;
+    position: relative;
   }
 
   .map-area {
@@ -109,26 +86,62 @@
     position: relative;
   }
 
+  .sidebar-wrapper {
+    display: flex;
+    position: relative;
+    z-index: 20;
+  }
+
   aside {
-    background-color: lightgray;
+    background-color: white;
     height: 100%;
-    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    box-shadow: -2px 0 5px rgba(0, 0, 0, 0.1);
+    transition: width 0.3s ease;
+  }
+
+  aside.resizing {
+    transition: none;
+  }
+
+  .sidebar-header {
+    display: flex;
+    align-items: center;
+    justify-content: left;
+    padding: 10px;
+    border-bottom: 1px solid #eee;
+  }
+
+  .hamburger {
+    background: transparent;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: #333;
+    padding: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .hamburger:hover {
+    background-color: #f0f0f0;
+    border-radius: 4px;
   }
 
   .sidebar-content {
     padding: 1rem;
+    overflow-y: auto;
+    flex: 1;
   }
 
   .resizer {
-    width: 8px;
+    width: 4px;
     cursor: col-resize;
-    background-color: #eee;
+    background-color: #f0f0f0;
     border-left: 1px solid #ccc;
-    border-right: 1px solid #ccc;
     transition: background-color 0.2s;
-    border: none;
-    padding: 0;
-    outline: none;
     height: 100%;
   }
 
