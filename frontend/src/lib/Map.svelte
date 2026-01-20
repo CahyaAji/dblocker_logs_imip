@@ -4,8 +4,11 @@
     import "maplibre-gl/dist/maplibre-gl.css";
 
     let mapContainer: HTMLElement;
-    let map: maplibregl.Map;
+    let map: maplibregl.Map | undefined;
     let markers: maplibregl.Marker[] = [];
+
+    const STORAGE_KEY = "map-style-config";
+    let activeStyle: "normal" | "hybrid" = "normal";
 
     const MAP_STYLES = {
         normal: "https://api.maptiler.com/maps/openstreetmap/style.json?key=fB2eDjoDg2nlel5Kw6ym",
@@ -53,15 +56,12 @@
     }
 
     function addMarkersToMap(data: any[]) {
+        markers.forEach((m) => m.remove());
+        markers = [];
+
         data.forEach((loc) => {
             const el = document.createElement("div");
             el.className = "marker-gps";
-            el.style.cssText = `
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-            `;
 
             // initial rotation offset
             const baseRotation = loc.angleStart || 0;
@@ -69,54 +69,53 @@
             for (let i = 0; i < 6; i++) {
                 const angle = i * 60 + baseRotation;
                 for (let layer = 0; layer < 2; layer++) {
-                    const slice = document.createElement("div");
+                    if (loc.config[i].signalCtrl === false && layer === 0) {
+                        continue;
+                    }
+                    if (loc.config[i].signalGPS === false && layer === 1) {
+                        continue;
+                    }
 
+                    const slice = document.createElement("div");
                     const size = layer === 1 ? 50 : 80;
+
+                    slice.className = "radar-slice";
 
                     slice.style.cssText = `
                     position: absolute;
                     width: ${size}px; height: ${size}px;
                     background-color: ${layer === 1 ? "green" : "yellow"};
-                    border-radius: 50%;
-                    border: 1px solid red;
-                    pointer-events: none;
                     --angle: ${angle}deg;
                     top: 50%; left: 50%;
                     transform: translate(-50%, -50%) rotate(var(--angle));
                     clip-path: polygon(50% 50%, 100% 20%, 100% 80%);
-                    animation: zoom-pulse 2s infinite ease-in-out;
                     `;
-
-                    // hide slice based on config
-                    if (loc.config[i].signalCtrl === false && layer === 0) {
-                        slice.style.display = "none";
-                    }
-
-                    if (loc.config[i].signalGPS === false && layer === 1) {
-                        slice.style.display = "none";
-                    }
-
                     el.appendChild(slice);
                 }
             }
 
-            // Add the core
             const core = document.createElement("div");
-            core.style.cssText =
-                "width: 24px; height: 24px; background: red; border: 2px solid white; border-radius: 50%; z-index: 2;";
+            core.className = "marker-core";
             el.appendChild(core);
 
-            new maplibregl.Marker({ element: el })
+            const marker = new maplibregl.Marker({ element: el })
                 .setLngLat([loc.lng, loc.lat])
-                .addTo(map);
+                .addTo(map!);
+
+            markers.push(marker);
         });
     }
 
     onMount(async () => {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved === "normal" || saved === "hybrid") {
+            activeStyle = saved;
+        }
+
         // 1. Initialize the map
         map = new maplibregl.Map({
             container: mapContainer,
-            style: MAP_STYLES.normal,
+            style: MAP_STYLES[activeStyle],
             center: [110.44053927286228, -7.777395993083473],
             zoom: 12,
         });
@@ -132,11 +131,18 @@
         });
     });
 
-    function switchStyle(styleKey: keyof typeof MAP_STYLES) {
-        if (map) map.setStyle(MAP_STYLES[styleKey]);
+    function switchStyle(styleKey: "normal" | "hybrid") {
+        if (!map) return;
+        activeStyle = styleKey;
+        localStorage.setItem(STORAGE_KEY, styleKey);
+        map.setStyle(MAP_STYLES[styleKey]);
     }
 
     onDestroy(() => {
+        // FIX: Clean up markers specifically before map removal
+        markers.forEach((marker) => marker.remove());
+        markers = [];
+
         if (map) map.remove();
     });
 </script>
@@ -181,5 +187,43 @@
 
     .map-container {
         flex-grow: 1;
+    }
+
+    .map-layout :global(.marker-gps) {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+    }
+    .map-layout :global(.marker-core) {
+        width: 24px;
+        height: 24px;
+        background: red;
+        border: 2px solid white;
+        border-radius: 50%;
+        z-index: 2;
+    }
+    :global(.radar-slice) {
+        border-radius: 50%;
+        border: 1px solid red;
+        pointer-events: none;
+        animation: zoom-pulse 2s infinite ease-in-out;
+    }
+
+    @keyframes zoom-pulse {
+        0% {
+            transform: translate(-50%, -50%) rotate(var(--angle)) scale(0);
+            opacity: 0.2;
+        }
+
+        20% {
+            transform: translate(-50%, -50%) rotate(var(--angle)) scale(0);
+            opacity: 1;
+        }
+
+        100% {
+            transform: translate(-50%, -50%) rotate(var(--angle)) scale(2.5);
+            opacity: 0;
+        }
     }
 </style>

@@ -7,20 +7,3 @@
 button {
   cursor: pointer;
 }
-
-@keyframes zoom-pulse {
-  0% {
-    transform: translate(-50%, -50%) rotate(var(--angle)) scale(0);
-    opacity: 0.2;
-  }
-
-  20% {
-    transform: translate(-50%, -50%) rotate(var(--angle)) scale(0);
-    opacity: 1;
-  }
-
-  100% {
-    transform: translate(-50%, -50%) rotate(var(--angle)) scale(2.5);
-    opacity: 0;
-  }
-}
