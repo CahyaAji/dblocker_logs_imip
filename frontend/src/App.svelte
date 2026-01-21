@@ -1,5 +1,6 @@
 <script lang="ts">
   import Map from "./lib/Map.svelte";
+    import SideMenu from "./lib/SideMenu.svelte";
   import { settings } from "./lib/store/configStore";
 
   let isResizing = false;
@@ -60,7 +61,7 @@
         </div>
         <div class="sidebar-content">
           {#if $settings.sidebarExpanded}
-            <p>Ini menu samping</p>
+          <SideMenu/>
           {/if}
         </div>
       </aside>
