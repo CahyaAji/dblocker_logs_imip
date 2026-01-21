@@ -1,9 +1,21 @@
 <script lang="ts">
+  import { onMount, onDestroy } from "svelte";
   import Map from "./lib/Map.svelte";
-    import SideMenu from "./lib/SideMenu.svelte";
+  import SideMenu from "./lib/SideMenu.svelte";
   import { settings } from "./lib/store/configStore";
+  import { startPolling, stopPolling } from "./lib/store/dblockerStore";
 
   let isResizing = false;
+
+  // ✨ Start the data loop when the App loads
+  onMount(() => {
+    startPolling(2000); // Fetch data every x seconds
+  });
+
+  // ✨ Stop the loop if the App is closed (good practice)
+  onDestroy(() => {
+    stopPolling();
+  });
 
   const toggleSidebar = () => {
     $settings.sidebarExpanded = !$settings.sidebarExpanded;
@@ -18,8 +30,8 @@
     if (!isResizing) return;
     const newWidth = window.innerWidth - e.clientX;
 
-    // Limits: Min 150px, Max 70% of screen
-    if (newWidth > 150 && newWidth < window.innerWidth * 0.7) {
+    // Limits: Min 150px, Max 50% of screen
+    if (newWidth > 150 && newWidth < window.innerWidth * 0.5) {
       $settings.sidebarWidth = newWidth;
     }
   };
@@ -61,7 +73,7 @@
         </div>
         <div class="sidebar-content">
           {#if $settings.sidebarExpanded}
-          <SideMenu/>
+            <SideMenu />
           {/if}
         </div>
       </aside>

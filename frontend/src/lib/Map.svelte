@@ -3,54 +3,34 @@
     import maplibregl from "maplibre-gl";
     import "maplibre-gl/dist/maplibre-gl.css";
     import { settings } from "./store/configStore";
+    import { dblockerStore, type DBlocker } from "./store/dblockerStore";
 
     let mapContainer: HTMLElement;
     let map: maplibregl.Map | undefined;
+
+    // Track Markers
     let markers = new Map<number, maplibregl.Marker>();
-    let intervalId: number;
+    // Track Config State (to detect changes)
+    let previousConfigMap = new Map<number, string>();
+
     let resizeObserver: ResizeObserver;
+    let debounceTimer: ReturnType<typeof setTimeout>;
 
     const MAP_STYLES = {
         normal: "https://api.maptiler.com/maps/openstreetmap/style.json?key=fB2eDjoDg2nlel5Kw6ym",
         hybrid: "https://api.maptiler.com/maps/hybrid/style.json?key=aUOEn1bA48mz3xc3pL4N",
     };
 
-    async function fetchLocations() {
-        // Mock API
-        return [
-            {
-                id: 1,
-                name: "Blocker tengah",
-                lng: 110.44053303318597,
-                lat: -7.777491824518677,
-                desc: "Drone Blocker Markas tengah",
-                angleStart: 0,
-                config: [
-                    { signalCtrl: true, signalGPS: true },
-                    { signalCtrl: true, signalGPS: true },
-                    { signalCtrl: false, signalGPS: true },
-                    { signalCtrl: true, signalGPS: true },
-                    { signalCtrl: true, signalGPS: true },
-                    { signalCtrl: true, signalGPS: false },
-                ],
-            },
-            {
-                id: 2,
-                name: "Blocker random",
-                lng: 110.4406,
-                lat: -7.76,
-                desc: "Drone Blocker Markas random",
-                angleStart: 0,
-                config: [
-                    { signalCtrl: false, signalGPS: false },
-                    { signalCtrl: false, signalGPS: false },
-                    { signalCtrl: false, signalGPS: false },
-                    { signalCtrl: true, signalGPS: true },
-                    { signalCtrl: true, signalGPS: true },
-                    { signalCtrl: true, signalGPS: false },
-                ],
-            },
-        ];
+    // ✨ 1. REACTIVE DATA LISTENER
+    // Whenever $dblockerStore changes (polling or user click), this runs.
+    $: if (map && $dblockerStore.length > 0) {
+        debounceRender($dblockerStore);
+    }
+
+    // ✨ 2. REACTIVE STYLE LISTENER
+    // Whenever $settings changes, this runs.
+    $: if (map && $settings.mapStyle) {
+        map.setStyle(MAP_STYLES[$settings.mapStyle]);
     }
 
     function updateMarkers(data: any[]) {
@@ -62,42 +42,35 @@
             if (!incomingIds.has(id)) {
                 marker.remove();
                 markers.delete(id);
+                previousConfigMap.delete(id);
             }
         }
 
         // Add/Update markers
         data.forEach((loc) => {
-            if (markers.has(loc.id)) {
-                const existingMarker = markers.get(loc.id);
-                existingMarker?.setLngLat([loc.lng, loc.lat]);
-            } else {
+            // Generate a signature for the current config (e.g. switches state)
+            const currentConfigSig = JSON.stringify(loc.config);
+            const prevConfigSig = previousConfigMap.get(loc.id);
+            const hasMarker = markers.has(loc.id);
+
+            // CASE 1: Config Changed OR New Marker -> Full Re-Render
+            if (!hasMarker || currentConfigSig !== prevConfigSig) {
+                // If it existed but config changed (e.g. user flipped switch), remove old one
+                if (hasMarker) markers.get(loc.id)?.remove();
+
                 const el = createMarkerElement(loc);
                 const newMarker = new maplibregl.Marker({ element: el })
                     .setLngLat([loc.lng, loc.lat])
                     .addTo(map!);
+
                 markers.set(loc.id, newMarker);
+                previousConfigMap.set(loc.id, currentConfigSig);
+            }
+            // CASE 2: Config is same, just move it (Performance optimization)
+            else if (hasMarker) {
+                markers.get(loc.id)?.setLngLat([loc.lng, loc.lat]);
             }
         });
-    }
-
-    function updatePixelScale() {
-        if (!map || !mapContainer) return;
-
-        const zoom = map.getZoom();
-        const lat = map.getCenter().lat;
-
-        // Math to convert meters to pixels at current zoom level
-        const metersPerPixel =
-            (156543.03392 * Math.cos((lat * Math.PI) / 180)) /
-            Math.pow(2, zoom);
-
-        // 1km Radius = 2000m Diameter
-        const diameterInMeters = 2000;
-
-        const pixels = diameterInMeters / metersPerPixel;
-
-        // Update the CSS variable
-        mapContainer.style.setProperty("--px-diameter", `${pixels}px`);
     }
 
     function createMarkerElement(loc: any) {
@@ -143,7 +116,25 @@
         return el;
     }
 
-    let debounceTimer: ReturnType<typeof setTimeout>;
+    function updatePixelScale() {
+        if (!map || !mapContainer) return;
+
+        const zoom = map.getZoom();
+        const lat = map.getCenter().lat;
+
+        // Math to convert meters to pixels at current zoom level
+        const metersPerPixel =
+            (156543.03392 * Math.cos((lat * Math.PI) / 180)) /
+            Math.pow(2, zoom);
+
+        // 1km Radius = 2000m Diameter
+        const diameterInMeters = 2000;
+
+        const pixels = diameterInMeters / metersPerPixel;
+
+        // Update the CSS variable
+        mapContainer.style.setProperty("--px-diameter", `${pixels}px`);
+    }
 
     function debounceRender(data: any[]) {
         clearTimeout(debounceTimer);
@@ -153,9 +144,7 @@
     }
 
     function switchStyle(styleKey: "normal" | "hybrid") {
-        if (!map) return;
-        $settings.mapStyle = styleKey; // ✨ Update Store
-        map.setStyle(MAP_STYLES[styleKey]);
+        $settings.mapStyle = styleKey;
     }
 
     onMount(async () => {
@@ -182,22 +171,18 @@
                 map.on("zoom", updatePixelScale);
             }
 
-            const initialData = await fetchLocations();
-            updateMarkers(initialData);
-
-            intervalId = setInterval(async () => {
-                const data = await fetchLocations();
-                debounceRender(data);
-            }, 1000);
+            // Initial render if data is already in store
+            if ($dblockerStore.length > 0) {
+                updateMarkers($dblockerStore);
+            }
         });
     });
 
     onDestroy(() => {
-        clearInterval(intervalId);
-        resizeObserver?.disconnect(); // ✨ Clean up observer
-
+        resizeObserver?.disconnect();
         markers.forEach((m) => m.remove());
         markers.clear();
+        previousConfigMap.clear();
 
         if (map) {
             map.off("move", updatePixelScale);
