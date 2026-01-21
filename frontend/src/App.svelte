@@ -1,11 +1,12 @@
 <script lang="ts">
   import Map from "./lib/Map.svelte";
+  import { settings } from "./lib/configStore";
 
-  let panelWidth = 300;
-  let isExpanded = false;
   let isResizing = false;
 
-  const toggleSidebar = () => (isExpanded = !isExpanded);
+  const toggleSidebar = () => {
+    $settings.sidebarExpanded = !$settings.sidebarExpanded;
+  };
 
   const startResize = (e: MouseEvent) => {
     isResizing = true;
@@ -15,8 +16,10 @@
   const handleMouseMove = (e: MouseEvent) => {
     if (!isResizing) return;
     const newWidth = window.innerWidth - e.clientX;
+
+    // Limits: Min 150px, Max 70% of screen
     if (newWidth > 150 && newWidth < window.innerWidth * 0.7) {
-      panelWidth = newWidth;
+      $settings.sidebarWidth = newWidth;
     }
   };
 
@@ -32,19 +35,20 @@
     </div>
 
     <div class="sidebar-wrapper">
-      {#if isExpanded}
+      {#if $settings.sidebarExpanded}
         <button
           type="button"
           class="resizer"
           class:active={isResizing}
           on:mousedown={startResize}
           aria-label="Resize sidebar"
-          style="padding:0; border:none; background:none;"
         ></button>
       {/if}
 
       <aside
-        style={isExpanded ? `width: ${panelWidth}px` : "width: 50px"}
+        style={$settings.sidebarExpanded
+          ? `width: ${$settings.sidebarWidth}px`
+          : "width: 50px"}
         class:resizing={isResizing}
       >
         <div class="sidebar-header">
@@ -55,7 +59,7 @@
           >
         </div>
         <div class="sidebar-content">
-          {#if isExpanded}
+          {#if $settings.sidebarExpanded}
             <p>Ini menu samping</p>
           {/if}
         </div>
@@ -143,6 +147,9 @@
     border-left: 1px solid #ccc;
     transition: background-color 0.2s;
     height: 100%;
+    padding: 0;
+    border: none;
+    background: none;
   }
 
   .resizer:hover,

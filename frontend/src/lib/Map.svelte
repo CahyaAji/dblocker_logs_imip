@@ -2,15 +2,13 @@
     import { onMount, onDestroy } from "svelte";
     import maplibregl from "maplibre-gl";
     import "maplibre-gl/dist/maplibre-gl.css";
+    import { settings } from "./configStore";
 
     let mapContainer: HTMLElement;
     let map: maplibregl.Map | undefined;
     let markers = new Map<number, maplibregl.Marker>();
-
     let intervalId: number;
-
-    const STORAGE_KEY = "map-style-config";
-    let activeStyle: "normal" | "hybrid" = "normal";
+    let resizeObserver: ResizeObserver;
 
     const MAP_STYLES = {
         normal: "https://api.maptiler.com/maps/openstreetmap/style.json?key=fB2eDjoDg2nlel5Kw6ym",
@@ -18,6 +16,7 @@
     };
 
     async function fetchLocations() {
+        // Mock API
         return [
             {
                 id: 1,
@@ -58,6 +57,7 @@
         if (!map) return;
         const incomingIds = new Set(data.map((loc) => loc.id));
 
+        // Cleanup removed markers
         for (const [id, marker] of markers) {
             if (!incomingIds.has(id)) {
                 marker.remove();
@@ -65,6 +65,7 @@
             }
         }
 
+        // Add/Update markers
         data.forEach((loc) => {
             if (markers.has(loc.id)) {
                 const existingMarker = markers.get(loc.id);
@@ -85,6 +86,7 @@
         const zoom = map.getZoom();
         const lat = map.getCenter().lat;
 
+        // Math to convert meters to pixels at current zoom level
         const metersPerPixel =
             (156543.03392 * Math.cos((lat * Math.PI) / 180)) /
             Math.pow(2, zoom);
@@ -94,6 +96,7 @@
 
         const pixels = diameterInMeters / metersPerPixel;
 
+        // Update the CSS variable
         mapContainer.style.setProperty("--px-diameter", `${pixels}px`);
     }
 
@@ -108,6 +111,7 @@
                 if (loc.config[i].signalCtrl === false && layer === 0) continue;
                 if (loc.config[i].signalGPS === false && layer === 1) continue;
 
+                // Create 2 ripples per sector for the overlapping effect
                 for (let ripple = 0; ripple < 2; ripple++) {
                     const slice = document.createElement("div");
                     slice.className = "radar-slice";
@@ -124,6 +128,7 @@
                         `${scaleWrapper}`,
                     );
 
+                    // Delay the second ripple by -1s so it starts halfway through
                     slice.style.animationDelay = `${ripple * -1}s`;
 
                     el.appendChild(slice);
@@ -149,24 +154,25 @@
 
     function switchStyle(styleKey: "normal" | "hybrid") {
         if (!map) return;
-        activeStyle = styleKey;
-        localStorage.setItem(STORAGE_KEY, styleKey);
+        $settings.mapStyle = styleKey; // ✨ Update Store
         map.setStyle(MAP_STYLES[styleKey]);
     }
 
     onMount(async () => {
-        const saved = localStorage.getItem(STORAGE_KEY);
-        if (saved === "normal" || saved === "hybrid") {
-            activeStyle = saved;
-        }
-
+        // ✨ Initialize using Store value
         map = new maplibregl.Map({
             container: mapContainer,
-            style: MAP_STYLES[activeStyle],
+            style: MAP_STYLES[$settings.mapStyle],
             center: [110.44053927286228, -7.777395993083473],
             zoom: 14,
         });
         map.addControl(new maplibregl.NavigationControl(), "top-left");
+
+        // ✨ Resize Observer: Watches for sidebar changes
+        resizeObserver = new ResizeObserver(() => {
+            map?.resize();
+        });
+        resizeObserver.observe(mapContainer);
 
         map.on("load", async () => {
             updatePixelScale();
@@ -188,6 +194,7 @@
 
     onDestroy(() => {
         clearInterval(intervalId);
+        resizeObserver?.disconnect(); // ✨ Clean up observer
 
         markers.forEach((m) => m.remove());
         markers.clear();
@@ -203,11 +210,11 @@
 <div class="map-layout">
     <div class="map-buttons">
         <button
-            class:active={activeStyle === "normal"}
+            class:active={$settings.mapStyle === "normal"}
             on:click={() => switchStyle("normal")}>Normal</button
         >
         <button
-            class:active={activeStyle === "hybrid"}
+            class:active={$settings.mapStyle === "hybrid"}
             on:click={() => switchStyle("hybrid")}>Satellite</button
         >
     </div>
@@ -281,6 +288,7 @@
 
         pointer-events: none;
 
+        /* Linear makes the ripple overlap smoothly */
         animation: zoom-pulse 2s infinite linear;
     }
 
