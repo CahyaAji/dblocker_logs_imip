@@ -1,11 +1,13 @@
 <script lang="ts">
     import { onMount, onDestroy } from "svelte";
-    import maplibregl, { config } from "maplibre-gl";
+    import maplibregl from "maplibre-gl";
     import "maplibre-gl/dist/maplibre-gl.css";
 
     let mapContainer: HTMLElement;
     let map: maplibregl.Map | undefined;
-    let markers: maplibregl.Marker[] = [];
+    let markers = new Map<number, maplibregl.Marker>();
+
+    let intervalId: number;
 
     const STORAGE_KEY = "map-style-config";
     let activeStyle: "normal" | "hybrid" = "normal";
@@ -15,10 +17,7 @@
         hybrid: "https://api.maptiler.com/maps/hybrid/style.json?key=aUOEn1bA48mz3xc3pL4N",
     };
 
-    // Mock API call - Replace this with your actual URL
     async function fetchLocations() {
-        // Simulating a fetch request
-        // return await fetch('https://api.example.com/locations').then(res => res.json());
         return [
             {
                 id: 1,
@@ -55,81 +54,98 @@
         ];
     }
 
-    function addMarkersToMap(data: any[]) {
-        markers.forEach((m) => m.remove());
-        markers = [];
+    function updateMarkers(data: any[]) {
+        if (!map) return;
+        const incomingIds = new Set(data.map((loc) => loc.id));
+
+        for (const [id, marker] of markers) {
+            if (!incomingIds.has(id)) {
+                marker.remove();
+                markers.delete(id);
+            }
+        }
 
         data.forEach((loc) => {
-            const el = document.createElement("div");
-            el.className = "marker-gps";
-
-            // initial rotation offset
-            const baseRotation = loc.angleStart || 0;
-
-            for (let i = 0; i < 6; i++) {
-                const angle = i * 60 + baseRotation;
-                for (let layer = 0; layer < 2; layer++) {
-                    if (loc.config[i].signalCtrl === false && layer === 0) {
-                        continue;
-                    }
-                    if (loc.config[i].signalGPS === false && layer === 1) {
-                        continue;
-                    }
-
-                    const slice = document.createElement("div");
-                    const size = layer === 1 ? 50 : 80;
-
-                    slice.className = "radar-slice";
-
-                    slice.style.cssText = `
-                    position: absolute;
-                    width: ${size}px; height: ${size}px;
-                    background-color: ${layer === 1 ? "green" : "yellow"};
-                    --angle: ${angle}deg;
-                    top: 50%; left: 50%;
-                    transform: translate(-50%, -50%) rotate(var(--angle));
-                    clip-path: polygon(50% 50%, 100% 20%, 100% 80%);
-                    `;
-                    el.appendChild(slice);
-                }
+            if (markers.has(loc.id)) {
+                const existingMarker = markers.get(loc.id);
+                existingMarker?.setLngLat([loc.lng, loc.lat]);
+            } else {
+                const el = createMarkerElement(loc);
+                const newMarker = new maplibregl.Marker({ element: el })
+                    .setLngLat([loc.lng, loc.lat])
+                    .addTo(map!);
+                markers.set(loc.id, newMarker);
             }
-
-            const core = document.createElement("div");
-            core.className = "marker-core";
-            el.appendChild(core);
-
-            const marker = new maplibregl.Marker({ element: el })
-                .setLngLat([loc.lng, loc.lat])
-                .addTo(map!);
-
-            markers.push(marker);
         });
     }
 
-    onMount(async () => {
-        const saved = localStorage.getItem(STORAGE_KEY);
-        if (saved === "normal" || saved === "hybrid") {
-            activeStyle = saved;
+    function updatePixelScale() {
+        if (!map || !mapContainer) return;
+
+        const zoom = map.getZoom();
+        const lat = map.getCenter().lat;
+
+        const metersPerPixel =
+            (156543.03392 * Math.cos((lat * Math.PI) / 180)) /
+            Math.pow(2, zoom);
+
+        // 1km Radius = 2000m Diameter
+        const diameterInMeters = 2000;
+
+        const pixels = diameterInMeters / metersPerPixel;
+
+        mapContainer.style.setProperty("--px-diameter", `${pixels}px`);
+    }
+
+    function createMarkerElement(loc: any) {
+        const el = document.createElement("div");
+        el.className = "marker-gps";
+        const baseRotation = loc.angleStart || 0;
+
+        for (let i = 0; i < 6; i++) {
+            const angle = i * 60 + baseRotation;
+            for (let layer = 0; layer < 2; layer++) {
+                if (loc.config[i].signalCtrl === false && layer === 0) continue;
+                if (loc.config[i].signalGPS === false && layer === 1) continue;
+
+                for (let ripple = 0; ripple < 2; ripple++) {
+                    const slice = document.createElement("div");
+                    slice.className = "radar-slice";
+
+                    slice.style.setProperty("--angle", `${angle}deg`);
+                    slice.style.setProperty(
+                        "--color",
+                        layer === 1 ? "darkgreen" : "yellow",
+                    );
+
+                    const scaleWrapper = layer === 1 ? 0.6 : 1.0;
+                    slice.style.setProperty(
+                        "--scale-factor",
+                        `${scaleWrapper}`,
+                    );
+
+                    slice.style.animationDelay = `${ripple * -1}s`;
+
+                    el.appendChild(slice);
+                }
+            }
         }
 
-        // 1. Initialize the map
-        map = new maplibregl.Map({
-            container: mapContainer,
-            style: MAP_STYLES[activeStyle],
-            center: [110.44053927286228, -7.777395993083473],
-            zoom: 12,
-        });
-        map.addControl(new maplibregl.NavigationControl(), "top-left");
+        const core = document.createElement("div");
+        core.className = "marker-core";
+        el.appendChild(core);
 
-        // 2. Wait for the map to load its style
-        map.on("load", async () => {
-            // 3. Fetch the data
-            const locationData = await fetchLocations();
+        return el;
+    }
 
-            // 4. Add markers
-            addMarkersToMap(locationData);
-        });
-    });
+    let debounceTimer: ReturnType<typeof setTimeout>;
+
+    function debounceRender(data: any[]) {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => {
+            updateMarkers(data);
+        }, 100);
+    }
 
     function switchStyle(styleKey: "normal" | "hybrid") {
         if (!map) return;
@@ -138,19 +154,62 @@
         map.setStyle(MAP_STYLES[styleKey]);
     }
 
-    onDestroy(() => {
-        // FIX: Clean up markers specifically before map removal
-        markers.forEach((marker) => marker.remove());
-        markers = [];
+    onMount(async () => {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved === "normal" || saved === "hybrid") {
+            activeStyle = saved;
+        }
 
-        if (map) map.remove();
+        map = new maplibregl.Map({
+            container: mapContainer,
+            style: MAP_STYLES[activeStyle],
+            center: [110.44053927286228, -7.777395993083473],
+            zoom: 14,
+        });
+        map.addControl(new maplibregl.NavigationControl(), "top-left");
+
+        map.on("load", async () => {
+            updatePixelScale();
+
+            if (map) {
+                map.on("move", updatePixelScale);
+                map.on("zoom", updatePixelScale);
+            }
+
+            const initialData = await fetchLocations();
+            updateMarkers(initialData);
+
+            intervalId = setInterval(async () => {
+                const data = await fetchLocations();
+                debounceRender(data);
+            }, 1000);
+        });
+    });
+
+    onDestroy(() => {
+        clearInterval(intervalId);
+
+        markers.forEach((m) => m.remove());
+        markers.clear();
+
+        if (map) {
+            map.off("move", updatePixelScale);
+            map.off("zoom", updatePixelScale);
+            map.remove();
+        }
     });
 </script>
 
 <div class="map-layout">
     <div class="map-buttons">
-        <button on:click={() => switchStyle("normal")}>Normal</button>
-        <button on:click={() => switchStyle("hybrid")}>Satellite</button>
+        <button
+            class:active={activeStyle === "normal"}
+            on:click={() => switchStyle("normal")}>Normal</button
+        >
+        <button
+            class:active={activeStyle === "hybrid"}
+            on:click={() => switchStyle("hybrid")}>Satellite</button
+        >
     </div>
     <div class="map-container" bind:this={mapContainer}></div>
 </div>
@@ -169,9 +228,8 @@
         margin-top: 10px;
         display: flex;
         gap: 10px;
-        background-color: transparent;
         position: absolute;
-        z-index: 1;
+        z-index: 2;
     }
 
     button {
@@ -179,10 +237,13 @@
         border-radius: 6px;
         border: solid 1px #ccc;
         background-color: white;
+        cursor: pointer;
     }
 
-    button:active {
-        background-color: gray;
+    button.active {
+        background-color: #333;
+        color: white;
+        border-color: #333;
     }
 
     .map-container {
@@ -195,34 +256,46 @@
         justify-content: center;
         position: relative;
     }
+
     .map-layout :global(.marker-core) {
-        width: 24px;
-        height: 24px;
+        width: 18px;
+        height: 18px;
         background: red;
         border: 2px solid white;
         border-radius: 50%;
         z-index: 2;
+        position: relative;
     }
-    :global(.radar-slice) {
+
+    .map-layout :global(.radar-slice) {
+        position: absolute;
+        width: calc(var(--px-diameter) * var(--scale-factor));
+        height: calc(var(--px-diameter) * var(--scale-factor));
+        background-color: var(--color);
+
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%) rotate(var(--angle));
+        clip-path: polygon(50% 50%, 100% 20%, 100% 80%);
         border-radius: 50%;
-        border: 1px solid red;
+
         pointer-events: none;
-        animation: zoom-pulse 2s infinite ease-in-out;
+
+        animation: zoom-pulse 2s infinite linear;
     }
 
     @keyframes zoom-pulse {
         0% {
             transform: translate(-50%, -50%) rotate(var(--angle)) scale(0);
-            opacity: 0.2;
+            opacity: 0.8;
         }
-
-        20% {
-            transform: translate(-50%, -50%) rotate(var(--angle)) scale(0);
+        30% {
+            transform: translate(-50%, -50%) rotate(var(--angle)) scale(0.3);
             opacity: 1;
         }
 
         100% {
-            transform: translate(-50%, -50%) rotate(var(--angle)) scale(2.5);
+            transform: translate(-50%, -50%) rotate(var(--angle)) scale(1);
             opacity: 0;
         }
     }
