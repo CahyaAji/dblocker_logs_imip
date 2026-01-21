@@ -1,6 +1,6 @@
 <script lang="ts">
   import Map from "./lib/Map.svelte";
-  import { settings } from "./lib/configStore";
+  import { settings } from "./lib/store/configStore";
 
   let isResizing = false;
 
