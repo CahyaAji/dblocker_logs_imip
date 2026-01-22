@@ -8,6 +8,7 @@ type DBlockerConfig struct {
 type DBlocker struct {
 	ID         uint             `gorm:"primaryKey" json:"id"`
 	Name       string           `json:"name" binding:"required"`
+	SerialNumb string           `json:"serial_numb" binding:"required"`
 	Lat        float64          `json:"latitude" binding:"required"`
 	Lng        float64          `json:"longitude" binding:"required"`
 	Desc       string           `json:"desc"`

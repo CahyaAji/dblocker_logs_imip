@@ -98,5 +98,5 @@ func (h *DBlockerHandler) DeleteDBlocker(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusNoContent, nil)
+	c.JSON(http.StatusOK, gin.H{"message": "DBlocker deleted successfully"})
 }
