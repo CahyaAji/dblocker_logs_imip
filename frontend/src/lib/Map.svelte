@@ -33,7 +33,7 @@
         map.setStyle(MAP_STYLES[$settings.mapStyle]);
     }
 
-    function updateMarkers(data: any[]) {
+    function updateMarkers(data: DBlocker[]) {
         if (!map) return;
         const incomingIds = new Set(data.map((loc) => loc.id));
 
@@ -48,8 +48,10 @@
 
         // Add/Update markers
         data.forEach((loc) => {
+            if (loc.latitude == null || loc.longitude == null) return;
+
             // Generate a signature for the current config (e.g. switches state)
-            const currentConfigSig = JSON.stringify(loc.config);
+            const currentConfigSig = JSON.stringify(loc.config || []);
             const prevConfigSig = previousConfigMap.get(loc.id);
             const hasMarker = markers.has(loc.id);
 
@@ -60,7 +62,7 @@
 
                 const el = createMarkerElement(loc);
                 const newMarker = new maplibregl.Marker({ element: el })
-                    .setLngLat([loc.lng, loc.lat])
+                    .setLngLat([loc.longitude, loc.latitude])
                     .addTo(map!);
 
                 markers.set(loc.id, newMarker);
@@ -68,21 +70,25 @@
             }
             // CASE 2: Config is same, just move it (Performance optimization)
             else if (hasMarker) {
-                markers.get(loc.id)?.setLngLat([loc.lng, loc.lat]);
+                markers.get(loc.id)?.setLngLat([loc.longitude, loc.latitude]);
             }
         });
     }
 
-    function createMarkerElement(loc: any) {
+    function createMarkerElement(loc: DBlocker) {
         const el = document.createElement("div");
         el.className = "marker-gps";
-        const baseRotation = loc.angleStart || 0;
+        const baseRotation = loc.angle_start || 0;
+        const configs = loc.config || [];
 
         for (let i = 0; i < 6; i++) {
             const angle = i * 60 + baseRotation;
             for (let layer = 0; layer < 2; layer++) {
-                if (loc.config[i].signalCtrl === false && layer === 0) continue;
-                if (loc.config[i].signalGPS === false && layer === 1) continue;
+                const sectorConfig = configs[i];
+                if (!sectorConfig) continue;
+
+                if (sectorConfig.signal_ctrl === false && layer === 0) continue;
+                if (sectorConfig.signal_gps === false && layer === 1) continue;
 
                 // Create 2 ripples per sector for the overlapping effect
                 for (let ripple = 0; ripple < 2; ripple++) {
@@ -136,7 +142,7 @@
         mapContainer.style.setProperty("--px-diameter", `${pixels}px`);
     }
 
-    function debounceRender(data: any[]) {
+    function debounceRender(data: DBlocker[]) {
         clearTimeout(debounceTimer);
         debounceTimer = setTimeout(() => {
             updateMarkers(data);
@@ -157,6 +163,16 @@
         });
         map.addControl(new maplibregl.NavigationControl(), "top-left");
 
+        // Fix for "Image " " could not be loaded" error from MapTiler style
+        map.on("styleimagemissing", (e) => {
+            if (e.id === " " || e.id === "null") {
+                const width = 1;
+                const height = 1;
+                const data = new Uint8Array(width * height * 4);
+                map?.addImage(e.id, { width, height, data });
+            }
+        });
+
         // ✨ Resize Observer: Watches for sidebar changes
         resizeObserver = new ResizeObserver(() => {
             map?.resize();
@@ -172,6 +188,7 @@
             }
 
             // Initial render if data is already in store
+            console.log("DBlocker Store on map load: " + JSON.stringify($dblockerStore));
             if ($dblockerStore.length > 0) {
                 updateMarkers($dblockerStore);
             }

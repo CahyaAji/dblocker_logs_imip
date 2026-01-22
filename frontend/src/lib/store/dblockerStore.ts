@@ -1,17 +1,18 @@
 import { writable } from 'svelte/store';
 
 export interface DBlockerConfig {
-    signalCtrl: boolean;
-    signalGPS: boolean;
+    signal_ctrl: boolean;
+    signal_gps: boolean;
 }
 
 export interface DBlocker {
     id: number;
     name: string;
-    lat: number;
-    lng: number;
+    serial_numb: string;
+    latitude: number;
+    longitude: number;
     desc: string;
-    angleStart: number;
+    angle_start: number;
     config: DBlockerConfig[]; 
 }
 
@@ -29,7 +30,9 @@ export async function fetchDBlockers() {
         const res = await fetch(`${API_BASE}/dblockers`);
         if (!res.ok) throw new Error("Fetch dblockers failed");
         
-        const data: DBlocker[] = await res.json();
+        const json = await res.json();
+        // Handle wrapped response { data: [...] } or direct array [...]
+        const data: DBlocker[] = Array.isArray(json) ? json : (json.data || []);
         dblockerStore.set(data);
     } catch (err) {
         console.error("Polling Error:", err);
@@ -52,7 +55,7 @@ export function stopPolling() {
 export async function switchSignal(
     blockerId: number, 
     sectorIdx: number, 
-    type: 'signalCtrl' | 'signalGPS', 
+    type: 'signal_ctrl' | 'signal_gps', 
     newValue: boolean
 ) {
     // A. Optimistic Update: Update UI *immediately* so it feels fast
@@ -71,7 +74,7 @@ export async function switchSignal(
         const payload = {
             id: blockerId,
             sector: sectorIdx,
-            type: type,   // "signalCtrl" or "signalGPS"
+            type: type,   // "signal_ctrl" or "signal_gps"
             value: newValue // true or false
         };
 
