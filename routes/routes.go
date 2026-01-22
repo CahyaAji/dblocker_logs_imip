@@ -15,6 +15,7 @@ func SetupRouter(db *gorm.DB, mqttClient mqtt.Client) *gin.Engine {
 	api := r.Group("/api")
 
 	deviceRepo := repository.NewDeviceRepository(db)
+	dblockerRepo := repository.NewDBlockerRepository(db)
 	actionLogRepo := repository.NewActionLogRepository(db)
 	deviceLogRepo := repository.NewDeviceLogRepository(db)
 	userRepo := repository.NewUserRepository(db)
@@ -22,6 +23,7 @@ func SetupRouter(db *gorm.DB, mqttClient mqtt.Client) *gin.Engine {
 	deviceControlHandler := handlers.NewDeviceControlHandler(mqttClient, deviceRepo)
 
 	deviceHandler := handlers.NewDeviceHandler(deviceRepo)
+	dblockerHandler := handlers.NewDBlockerHandler(dblockerRepo)
 	actionLogHandler := handlers.NewActionLogHandler(actionLogRepo)
 	deviceLogHandler := handlers.NewDeviceLogHandler(deviceLogRepo)
 	userHandler := handlers.NewUserHandler(userRepo)
@@ -32,6 +34,13 @@ func SetupRouter(db *gorm.DB, mqttClient mqtt.Client) *gin.Engine {
 	api.GET("/devices/:id", deviceHandler.GetDeviceByID)
 	api.PUT("/devices/:id", deviceHandler.UpdateDevice)
 	api.DELETE("/devices/:id", deviceHandler.DeleteDevice)
+
+	// DBlockers
+	api.POST("/dblockers", dblockerHandler.CreateDBlocker)
+	api.GET("/dblockers", dblockerHandler.GetDBlockers)
+	api.GET("/dblockers/:id", dblockerHandler.GetDBlockerByID)
+	api.PUT("/dblockers/:id", dblockerHandler.UpdateDBlocker)
+	api.DELETE("/dblockers/:id", dblockerHandler.DeleteDBlocker)
 
 	// Commands
 	api.POST("/commands", deviceControlHandler.ExecuteCommand)
