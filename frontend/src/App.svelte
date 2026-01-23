@@ -142,7 +142,7 @@
   }
 
   .sidebar-content {
-    padding: 1rem;
+    padding-right: 4px;
     overflow-y: auto;
     flex: 1;
   }
