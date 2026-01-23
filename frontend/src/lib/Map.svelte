@@ -47,40 +47,42 @@
         }
 
         // Add/Update markers
-        data.forEach((loc) => {
-            if (loc.latitude == null || loc.longitude == null) return;
+        data.forEach((dblocker) => {
+            if (dblocker.latitude == null || dblocker.longitude == null) return;
 
-            // Generate a signature for the current config (e.g. switches state)
-            const currentConfigSig = JSON.stringify(loc.config || []);
-            const prevConfigSig = previousConfigMap.get(loc.id);
-            const hasMarker = markers.has(loc.id);
+            // 1. Identify constant fields (id, serial_numb) vs changeable fields
+            const { id, serial_numb, ...changeableData } = dblocker;
+            // 2. Separate position from other visual config to optimize updates
+            const { latitude, longitude, ...visualData } = changeableData;
+            const currentConfigSig = JSON.stringify(visualData);
+            const prevConfigSig = previousConfigMap.get(dblocker.id);
+            const hasMarker = markers.has(dblocker.id);
 
             // CASE 1: Config Changed OR New Marker -> Full Re-Render
             if (!hasMarker || currentConfigSig !== prevConfigSig) {
                 // If it existed but config changed (e.g. user flipped switch), remove old one
-                if (hasMarker) markers.get(loc.id)?.remove();
+                if (hasMarker) markers.get(dblocker.id)?.remove();
 
-                const el = createMarkerElement(loc);
+                const el = createMarkerElement(dblocker);
                 const newMarker = new maplibregl.Marker({ element: el })
-                    .setLngLat([loc.longitude, loc.latitude])
+                    .setLngLat([dblocker.longitude, dblocker.latitude])
                     .addTo(map!);
 
-                markers.set(loc.id, newMarker);
-                previousConfigMap.set(loc.id, currentConfigSig);
+                markers.set(dblocker.id, newMarker);
+                previousConfigMap.set(dblocker.id, currentConfigSig);
             }
             // CASE 2: Config is same, just move it (Performance optimization)
             else if (hasMarker) {
-                markers.get(loc.id)?.setLngLat([loc.longitude, loc.latitude]);
+                markers.get(dblocker.id)?.setLngLat([dblocker.longitude, dblocker.latitude]);
             }
         });
     }
 
-    function createMarkerElement(loc: DBlocker) {
+    function createMarkerElement(dblocker: DBlocker) {
         const el = document.createElement("div");
         el.className = "marker-gps";
-        const baseRotation = loc.angle_start || 0;
-        const configs = loc.config || [];
-
+        const baseRotation = dblocker.angle_start || 0;
+        const configs = dblocker.config || [];
         for (let i = 0; i < 6; i++) {
             const angle = i * 60 + baseRotation;
             for (let layer = 0; layer < 2; layer++) {

@@ -2,20 +2,32 @@
 POST http://localhost:3003/api/dblockers
 Content-Type: application/json
 
+# {
+#     "name": "Drone Blocker timur updated",
+#     "serial_numb": "STM-1001",
+#     "latitude": -7.788432918834558,
+#     "longitude": 110.44306970000933,
+#     "desc": "Drone blocker di timur updated",
+#     "angle_start": 0,
+#     "config": [
+#         {"signal_ctrl": false, "signal_gps": false},
+#         {"signal_ctrl": false, "signal_gps": false},
+#         {"signal_ctrl": true, "signal_gps": true},
+#         {"signal_ctrl": true, "signal_gps": true},
+#         {"signal_ctrl": true, "signal_gps": true},
+#         {"signal_ctrl": true, "signal_gps": true}
+#     ]
+# }
+
+
 {
-    "name": "Drone Blocker timur",
-    "serial_numb": "1000",
-    "latitude": -7.89,
-    "longitude": 110.034,
-    "desc": "Drone blocker di timur",
-    "angle_start": 45,
+    "name": "Drone Blocker Barat",
+    "serial_numb": "SCM-1002",
+    "latitude": -7.786959801210232,
+    "longitude": 110.4220920495705,
+    "desc": "Drone blocker di barat",
+    "angle_start": 0,
     "config": [
-        {"signal_ctrl": false, "signal_gps": false},
-        {"signal_ctrl": true, "signal_gps": true},
-        {"signal_ctrl": true, "signal_gps": true},
-        {"signal_ctrl": true, "signal_gps": true},
-        {"signal_ctrl": true, "signal_gps": true},
-        {"signal_ctrl": true, "signal_gps": true},
         {"signal_ctrl": true, "signal_gps": true},
         {"signal_ctrl": true, "signal_gps": true},
         {"signal_ctrl": true, "signal_gps": true},
@@ -32,31 +44,43 @@ GET http://localhost:3003/api/dblockers
 GET http://localhost:3003/api/dblockers/1
 
 ### 4. Update DBlocker by ID
-PUT http://localhost:3003/api/dblockers/1
+PUT http://localhost:3003/api/dblockers/6
 Content-Type: application/json
 
 {
-    "name": "Drone Blocker timur updated",
-    "serial_numb": "1000",
-    "latitude": -7.89714275152239,
-    "longitude": 110.03435936894792,
-    "desc": "Drone blocker di timur updated",
-    "angle_start": 90,
+    "name": "Drone Blocker timur",
+    "serial_numb": "STM-1001",
+    "latitude": -7.788432918834558,
+    "longitude": 110.44306970000933,
+    "desc": "Drone blocker di timur",
+    "angle_start": 0,
     "config": [
+        {"signal_ctrl": true, "signal_gps": true},
+        {"signal_ctrl": true, "signal_gps": true},
+        {"signal_ctrl": true, "signal_gps": true},
         {"signal_ctrl": false, "signal_gps": false},
         {"signal_ctrl": false, "signal_gps": false},
-        {"signal_ctrl": true, "signal_gps": true},
-        {"signal_ctrl": true, "signal_gps": true},
-        {"signal_ctrl": true, "signal_gps": true},
-        {"signal_ctrl": true, "signal_gps": true},
-        {"signal_ctrl": true, "signal_gps": true},
-        {"signal_ctrl": true, "signal_gps": true},
-        {"signal_ctrl": true, "signal_gps": true},
-        {"signal_ctrl": true, "signal_gps": true},
-        {"signal_ctrl": true, "signal_gps": true},
         {"signal_ctrl": true, "signal_gps": true}
     ]
 }
 
+# {
+#     "name": "Drone Blocker Barat",
+#     "serial_numb": "SCM-1002",
+#     "latitude": -7.7869597,
+#     "longitude": 110.4220920495705,
+#     "desc": "Drone blocker di barat",
+#     "angle_start": 0,
+#     "config": [
+#         {"signal_ctrl": false, "signal_gps": false},
+#         {"signal_ctrl": false, "signal_gps": false},
+#         {"signal_ctrl": true, "signal_gps": true},
+#         {"signal_ctrl": true, "signal_gps": true},
+#         {"signal_ctrl": true, "signal_gps": true},
+#         {"signal_ctrl": true, "signal_gps": false}
+#     ]
+# }
+
+
 ### 5. Delete DBlocker by ID
-DELETE http://localhost:3003/api/dblockers/3
+DELETE http://localhost:3003/api/dblockers/5
