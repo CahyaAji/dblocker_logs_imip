@@ -39,7 +39,7 @@ export async function fetchDBlockers() {
     }
 }
 
-export function startPolling(intervalMs = 1000) {
+export function startPolling(intervalMs = 3000) {
     fetchDBlockers();
     stopPolling();
     pollingInterval = setInterval(fetchDBlockers, intervalMs);
