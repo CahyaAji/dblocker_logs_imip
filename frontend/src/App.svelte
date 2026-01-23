@@ -1,20 +1,14 @@
 <script lang="ts">
-  import { onMount, onDestroy } from "svelte";
   import Map from "./lib/Map.svelte";
   import SideMenu from "./lib/SideMenu.svelte";
   import { settings } from "./lib/store/configStore";
   import { startPolling, stopPolling } from "./lib/store/dblockerStore";
 
-  let isResizing = false;
+  let isResizing = $state(false);
 
-  // ✨ Start the data loop when the App loads
-  onMount(() => {
-    startPolling(2000); // Fetch data every x seconds
-  });
-
-  // ✨ Stop the loop if the App is closed (good practice)
-  onDestroy(() => {
-    stopPolling();
+  $effect(() => {
+    startPolling(2000);
+    return () => stopPolling();
   });
 
   const toggleSidebar = () => {
@@ -39,7 +33,7 @@
   const stopResize = () => (isResizing = false);
 </script>
 
-<svelte:window on:mousemove={handleMouseMove} on:mouseup={stopResize} />
+<svelte:window onmousemove={handleMouseMove} onmouseup={stopResize} />
 
 <div class="app-container">
   <main>
@@ -53,7 +47,7 @@
           type="button"
           class="resizer"
           class:active={isResizing}
-          on:mousedown={startResize}
+          onmousedown={startResize}
           aria-label="Resize sidebar"
         ></button>
       {/if}
@@ -67,7 +61,7 @@
         <div class="sidebar-header">
           <button
             class="hamburger"
-            on:click={toggleSidebar}
+            onclick={toggleSidebar}
             aria-label="Toggle Sidebar">☰</button
           >
         </div>
@@ -106,7 +100,7 @@
   .sidebar-wrapper {
     display: flex;
     position: relative;
-    z-index: 20;
+    z-index: 10;
   }
 
   aside {

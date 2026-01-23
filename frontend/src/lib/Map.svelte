@@ -1,12 +1,12 @@
 <script lang="ts">
-    import { onMount, onDestroy } from "svelte";
+    import { onMount } from "svelte";
     import maplibregl from "maplibre-gl";
     import "maplibre-gl/dist/maplibre-gl.css";
     import { settings } from "./store/configStore";
     import { dblockerStore, type DBlocker } from "./store/dblockerStore";
 
     let mapContainer: HTMLElement;
-    let map: maplibregl.Map | undefined;
+    let map = $state<maplibregl.Map>();
 
     // Track Markers
     let markers = new Map<number, maplibregl.Marker>();
@@ -23,15 +23,16 @@
 
     // ✨ 1. REACTIVE DATA LISTENER
     // Whenever $dblockerStore changes (polling or user click), this runs.
-    $: if (map && $dblockerStore.length > 0) {
-        debounceRender($dblockerStore);
-    }
+    $effect(() => {
+        if (map && $dblockerStore.length > 0) debounceRender($dblockerStore);
+    });
 
     // ✨ 2. REACTIVE STYLE LISTENER
     // Whenever $settings changes, this runs.
-    $: if (map && $settings.mapStyle) {
-        map.setStyle(MAP_STYLES[$settings.mapStyle]);
-    }
+    $effect(() => {
+        if (map && $settings.mapStyle)
+            map.setStyle(MAP_STYLES[$settings.mapStyle]);
+    });
 
     function updateMarkers(data: DBlocker[]) {
         if (!map) return;
@@ -73,7 +74,9 @@
             }
             // CASE 2: Config is same, just move it (Performance optimization)
             else if (hasMarker) {
-                markers.get(dblocker.id)?.setLngLat([dblocker.longitude, dblocker.latitude]);
+                markers
+                    .get(dblocker.id)
+                    ?.setLngLat([dblocker.longitude, dblocker.latitude]);
             }
         });
     }
@@ -155,7 +158,7 @@
         $settings.mapStyle = styleKey;
     }
 
-    onMount(async () => {
+    onMount(() => {
         // ✨ Initialize using Store value
         map = new maplibregl.Map({
             container: mapContainer,
@@ -181,7 +184,7 @@
         });
         resizeObserver.observe(mapContainer);
 
-        map.on("load", async () => {
+        map.on("load", () => {
             updatePixelScale();
 
             if (map) {
@@ -190,24 +193,26 @@
             }
 
             // Initial render if data is already in store
-            console.log("DBlocker Store on map load: " + JSON.stringify($dblockerStore));
+            console.log(
+                "DBlocker Store on map load: " + JSON.stringify($dblockerStore),
+            );
             if ($dblockerStore.length > 0) {
                 updateMarkers($dblockerStore);
             }
         });
-    });
 
-    onDestroy(() => {
-        resizeObserver?.disconnect();
-        markers.forEach((m) => m.remove());
-        markers.clear();
-        previousConfigMap.clear();
+        return () => {
+            resizeObserver?.disconnect();
+            markers.forEach((m) => m.remove());
+            markers.clear();
+            previousConfigMap.clear();
 
-        if (map) {
-            map.off("move", updatePixelScale);
-            map.off("zoom", updatePixelScale);
-            map.remove();
-        }
+            if (map) {
+                map.off("move", updatePixelScale);
+                map.off("zoom", updatePixelScale);
+                map.remove();
+            }
+        };
     });
 </script>
 
@@ -215,11 +220,11 @@
     <div class="map-buttons">
         <button
             class:active={$settings.mapStyle === "normal"}
-            on:click={() => switchStyle("normal")}>Normal</button
+            onclick={() => switchStyle("normal")}>Normal</button
         >
         <button
             class:active={$settings.mapStyle === "hybrid"}
-            on:click={() => switchStyle("hybrid")}>Satellite</button
+            onclick={() => switchStyle("hybrid")}>Satellite</button
         >
     </div>
     <div class="map-container" bind:this={mapContainer}></div>
