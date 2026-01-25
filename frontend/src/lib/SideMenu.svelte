@@ -56,7 +56,7 @@
 
     .tabs {
         display: flex;
-        border-bottom: 1px solid #ccc;
+        border-bottom: 1px solid var(--separator);
         margin-bottom: 2px;
     }
 
@@ -66,11 +66,13 @@
         background: none;
         border: none;
         border-bottom: 3px solid transparent;
-        border-right: 1px solid #ccc;
+        border-right: 1px solid var(--separator);
+        color: var(--text-secondary);
     }
 
     button.active {
-        border-bottom-color: #333;
+        border-bottom-color: var(--text-primary);
         font-weight: bold;
+        color: var(--text-primary);
     }
 </style>
