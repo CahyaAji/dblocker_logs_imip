@@ -58,6 +58,7 @@
         display: flex;
         border-bottom: 1px solid var(--separator);
         margin-bottom: 2px;
+        
     }
 
     button {
@@ -65,6 +66,7 @@
         cursor: pointer;
         background: none;
         border: none;
+        font-size: 13pt;
         border-bottom: 3px solid transparent;
         border-right: 1px solid var(--separator);
         color: var(--text-secondary);

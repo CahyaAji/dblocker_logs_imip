@@ -34,9 +34,9 @@ body {
 .card {
     background-color: var(--card-bg);
     border-radius: 12px;
-    padding: 16px;
+    padding: 14px 12px;
     box-shadow: 0 1px 3px rgba(0,0,0,0.08);
-    margin-bottom: 16px;
+    margin-bottom: 2px;
 }
 
 .card-header {
@@ -51,14 +51,15 @@ body {
 
 /* Buttons */
 .btn-edit {
-    font-size: 12px;
-    padding: 4px 12px;
+    font-size: 14px;
+    padding: 6px 16px;
     border-radius: 12px;
-    border: 1px solid var(--accent-blue);
+    border: 2px solid var(--accent-blue);
     color: var(--accent-blue);
     background: transparent;
-    font-weight: 500;
+    font-weight: 800;
     cursor: pointer;
+    background-color: var(--bg-color);
 }
 
 .btn-icon {

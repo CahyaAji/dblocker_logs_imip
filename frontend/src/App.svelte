@@ -35,7 +35,7 @@
     const newWidth = window.innerWidth - e.clientX;
 
     // Limits: Min 300px, Max 50% of screen
-    if (newWidth > 300 && newWidth < window.innerWidth * 0.5) {
+    if (newWidth > 330 && newWidth < window.innerWidth * 0.5) {
       $settings.sidebarWidth = newWidth;
     }
   };

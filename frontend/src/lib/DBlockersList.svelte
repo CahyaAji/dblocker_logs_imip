@@ -106,10 +106,10 @@
         flex-direction: column;
         overflow-y: auto;
         scrollbar-color: var(--separator) var(--bg-color);
-        gap: 16px;
+        gap: 8px;
         flex: 1;
         min-height: 0;
-        padding: 16px;
+        padding: 10px 6px;
     }
     .empty {
         text-align: center;
@@ -119,12 +119,12 @@
     .sector {
         display: flex;
         flex-direction: column;
-        gap: 4px;
-        margin-bottom: 6px;
+        gap: 2px;
+        margin-bottom: 4px;
     }
     .card-content {
         display: flex;
-        gap: 12px;
+        gap: 10px;
     }
     .col {
         flex: 1;
