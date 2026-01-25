@@ -104,7 +104,7 @@
   }
 
   aside {
-    background-color: white;
+    background-color: var(--background-color-light);
     height: 100%;
     display: flex;
     flex-direction: column;
@@ -143,8 +143,10 @@
 
   .sidebar-content {
     padding-right: 4px;
-    overflow-y: auto;
     flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
   }
 
   .resizer {

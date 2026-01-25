@@ -4,8 +4,7 @@
     let activeTab = $state("dblocker");
 </script>
 
-<div>
-    <div class="other">Notif Menu</div>
+<div class="container">
     <div class="tabs">
         <button
             class:active={activeTab === "dblocker"}
@@ -36,6 +35,13 @@
 </div>
 
 <style>
+    .container {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        overflow: hidden;
+    }
+
     .other {
         display: flex;
         height: 200px;

@@ -4,6 +4,18 @@
   padding: 0;
 }
 
+:root {
+  --background-color-light: #ebdfca;
+  --text-color-light: black;
+  --border-color-light: #26648e;
+  --background-color-dark: black;
+  --text-color-dark: white;
+  --border-color-dark: lightblue;
+}
+
+
+/* 26648e 4f8fc0 53d2dc ffe3b3 */
+
 button {
   cursor: pointer;
 }
