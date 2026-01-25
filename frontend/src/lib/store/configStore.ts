@@ -5,18 +5,33 @@ interface AppSettings {
     mapStyle: 'normal' | 'hybrid';
     sidebarExpanded: boolean;
     sidebarWidth: number;
+    theme: 'light' | 'dark';
 }
 
 // Default settings (for first-time users)
 const DEFAULT_SETTINGS: AppSettings = {
     mapStyle: 'normal',
     sidebarExpanded: false,
-    sidebarWidth: 300
+    sidebarWidth: 300,
+    theme: 'light'
 };
 
 // Load from LocalStorage (with SSR safety check)
 const stored = typeof localStorage !== 'undefined' ? localStorage.getItem('app-settings') : null;
-const initialValue = stored ? JSON.parse(stored) : DEFAULT_SETTINGS;
+let initialValue = stored ? JSON.parse(stored) : null;
+
+if (!initialValue) {
+    initialValue = { ...DEFAULT_SETTINGS };
+    if (typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        initialValue.theme = 'dark';
+    }
+} else if (!initialValue.theme) {
+    if (typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        initialValue.theme = 'dark';
+    } else {
+        initialValue.theme = 'light';
+    }
+}
 
 // Create the store
 export const settings = writable<AppSettings>(initialValue);

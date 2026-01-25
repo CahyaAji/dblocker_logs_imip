@@ -39,52 +39,97 @@
     ];
 </script>
 
-<div class="list">
-    {#each dblockerStore as blocker (blocker.id)}
-        <div class="card">
-            <div>{blocker.name}</div>
-            {#each blocker.config as config, index}
-                <div>
-                    <div>Sector {index + 1}</div>
-                    <div>Block RC: {config.signal_ctrl ? "ON" : "OFF"}</div>
-                    <div>Block GPS: {config.signal_gps ? "ON" : "OFF"}</div>
+    <div class="list">
+        {#each dblockerStore as blocker (blocker.id)}
+            <div class="card">
+                <div class="card-header">
+                    <div>{blocker.name}</div>
+                    <button class="btn-edit">Edit</button>
                 </div>
-                <!-- <div>
-                    Sector {index + 1} - Block RC: {config.signal_ctrl
-                        ? "ON"
-                        : "OFF"}, Block GPS: {config.signal_gps ? "ON" : "OFF"}
-                </div> -->
-            {/each}
-            <div>
-                <button>Edit</button>
+                <div class="card-content">
+                    <div class="col">
+                        {#each blocker.config.slice(0, 3) as config, index}
+                            <div class="sector">
+                                <div class="section-title">Sector {index + 1}</div>
+                                <div class="control-group">
+                                    <div class="control-row">
+                                        <div class="control-label">Blcker RC</div>
+                                        <label class="switch">
+                                        <input type="checkbox" checked={config.signal_ctrl}>
+                                        <span class="slider"></span>
+                                        </label>
+                                    </div>
+                                    <div class="control-row">
+                                        <div class="control-label">Blcker GPS</div>
+                                        <label class="switch">
+                                        <input type="checkbox" checked={config.signal_gps}>
+                                        <span class="slider"></span>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        {/each}
+                    </div>
+                    <div class="col">
+                        {#each blocker.config.slice(3, 6) as config, index}
+                            <div class="sector">
+                                <div class="section-title">Sector {index + 4}</div>
+                                <div class="control-group">
+                                    <div class="control-row">
+                                        <div class="control-label">Blcker RC</div>
+                                        <label class="switch">
+                                        <input type="checkbox" checked={config.signal_ctrl}>
+                                        <span class="slider"></span>
+                                        </label>
+                                    </div>
+                                    <div class="control-row">
+                                        <div class="control-label">Blcker GPS</div>
+                                        <label class="switch">
+                                        <input type="checkbox" checked={config.signal_gps}>
+                                        <span class="slider"></span>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        {/each}
+                    </div>
+                </div>
             </div>
-        </div>
-    {:else}
-        <div class="empty">No DBlockers found</div>
-    {/each}
-</div>
+        {:else}
+            <div class="empty">No DBlockers found</div>
+        {/each}
+    </div>
 
 <style>
     .list {
         display: flex;
         flex-direction: column;
         overflow-y: auto;
-        scrollbar-color: var(--border-color-light) var(--background-color-light);
-        gap: 6px;
+        scrollbar-color: var(--separator) var(--bg-color);
+        gap: 16px;
         flex: 1;
         min-height: 0;
-    }
-    .card {
-        margin: 0 2px;
-        padding: 6px 8px;
-        border: 1px solid var(--border-color-light);
-        border-radius: 8px;
-        background-color: whitesmoke;
-        box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.1);
+        padding: 16px;
     }
     .empty {
         text-align: center;
         color: #888;
         margin-top: 2rem;
+    }
+    .sector {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        margin-bottom: 6px;
+    }
+    .card-content {
+        display: flex;
+        gap: 12px;
+    }
+    .col {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
     }
 </style>
