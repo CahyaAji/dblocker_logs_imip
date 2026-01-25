@@ -1,5 +1,15 @@
-<script>
+<script lang="ts">
     // import { dblockerStore, switchSignal } from "./store/dblockerStore";
+
+    let editingIds: number[] = $state([]);
+
+    function toggleEditMode(id: number) {
+        if (editingIds.includes(id)) {
+            editingIds = editingIds.filter(i => i !== id);
+        } else {
+            editingIds = [...editingIds, id];
+        }
+    }
 
     const dblockerStore = [
         {
@@ -41,10 +51,15 @@
 
     <div class="list">
         {#each dblockerStore as blocker (blocker.id)}
+            {@const isEditMode = editingIds.includes(blocker.id)}
             <div class="card">
                 <div class="card-header">
                     <div>{blocker.name}</div>
-                    <button class="btn-edit">Edit</button>
+                    {#if isEditMode}
+                    <button class="btn-edit" onclick={() => toggleEditMode(blocker.id)}>Apply</button>
+                    {:else}
+                    <button class="btn-edit" onclick={() => toggleEditMode(blocker.id)}>Edit</button>
+                    {/if}
                 </div>
                 <div class="card-content">
                     <div class="col">
@@ -55,14 +70,14 @@
                                     <div class="control-row">
                                         <div class="control-label">Blcker RC</div>
                                         <label class="switch">
-                                        <input type="checkbox" checked={config.signal_ctrl}>
+                                        <input type="checkbox" checked={config.signal_ctrl} disabled={!isEditMode}>
                                         <span class="slider"></span>
                                         </label>
                                     </div>
                                     <div class="control-row">
                                         <div class="control-label">Blcker GPS</div>
                                         <label class="switch">
-                                        <input type="checkbox" checked={config.signal_gps}>
+                                        <input type="checkbox" checked={config.signal_gps} disabled={!isEditMode}>
                                         <span class="slider"></span>
                                         </label>
                                     </div>
