@@ -55,7 +55,7 @@ Content-Type: application/json
     "desc": "Drone blocker di timur",
     "angle_start": 0,
     "config": [
-        {"signal_ctrl": true, "signal_gps": true},
+        {"signal_ctrl": true, "signal_gps": false},
         {"signal_ctrl": true, "signal_gps": true},
         {"signal_ctrl": true, "signal_gps": true},
         {"signal_ctrl": false, "signal_gps": false},
@@ -83,4 +83,21 @@ Content-Type: application/json
 
 
 ### 5. Delete DBlocker by ID
-DELETE http://localhost:3003/api/dblockers/5
+DELETE http://localhost:3003/api/dblockers/8
+
+
+### 6. Update DBlocker Config
+PUT http://localhost:3003/api/dblockers/config
+Content-Type: application/json
+
+{
+    "id": 6,
+    "config": [
+        {"signal_ctrl": true, "signal_gps": true},
+        {"signal_ctrl": true, "signal_gps": true},
+        {"signal_ctrl": true, "signal_gps": true},
+        {"signal_ctrl": false, "signal_gps": false},
+        {"signal_ctrl": false, "signal_gps": false},
+        {"signal_ctrl": false, "signal_gps": false}
+    ]
+}

@@ -15,3 +15,8 @@ type DBlocker struct {
 	AngleStart int              `json:"angle_start" default:"0"`
 	Config     []DBlockerConfig `gorm:"serializer:json;type:jsonb" json:"config"`
 }
+
+type DBlockerConfigUpdate struct {
+	ID     uint             `json:"id" binding:"required"`
+	Config []DBlockerConfig `gorm:"serializer:json;type:jsonb" json:"config" required:"true"`
+}

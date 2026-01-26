@@ -100,3 +100,16 @@ func (h *DBlockerHandler) DeleteDBlocker(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"message": "DBlocker deleted successfully"})
 }
+
+func (h *DBlockerHandler) UpdateDBlockerConfig(c *gin.Context) {
+	var input models.DBlockerConfigUpdate
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	if err := h.Repo.UpdateConfig(input.ID, input.Config); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"data": input})
+}

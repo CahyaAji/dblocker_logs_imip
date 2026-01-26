@@ -37,3 +37,7 @@ func (r *DBlockerRepository) Delete(id uint) error {
 func (r *DBlockerRepository) Update(dblocker *models.DBlocker) error {
 	return r.DB.Save(dblocker).Error
 }
+
+func (r *DBlockerRepository) UpdateConfig(id uint, config []models.DBlockerConfig) error {
+	return r.DB.Model(&models.DBlocker{ID: id}).Select("Config").Updates(models.DBlocker{Config: config}).Error
+}

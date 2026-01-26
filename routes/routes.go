@@ -40,6 +40,7 @@ func SetupRouter(db *gorm.DB, mqttClient mqtt.Client) *gin.Engine {
 	api.GET("/dblockers", dblockerHandler.GetDBlockers)
 	api.GET("/dblockers/:id", dblockerHandler.GetDBlockerByID)
 	api.PUT("/dblockers/:id", dblockerHandler.UpdateDBlocker)
+	api.PUT("/dblockers/config", dblockerHandler.UpdateDBlockerConfig)
 	api.DELETE("/dblockers/:id", dblockerHandler.DeleteDBlocker)
 
 	// Commands
