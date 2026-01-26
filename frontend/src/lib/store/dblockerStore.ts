@@ -1,4 +1,4 @@
-import { writable } from 'svelte/store';
+import { writable, get } from 'svelte/store';
 
 export interface DBlockerConfig {
     signal_ctrl: boolean;
@@ -21,7 +21,7 @@ export const dblockerStore = writable<DBlocker[]>([]);
 
 // --- CONFIG ---
 const API_BASE = "http://localhost:3003/api";
-let pollingInterval: number | undefined;
+let pollingInterval: ReturnType<typeof setInterval> | undefined;
 
 
 // --- READ DATA (GET) ---
@@ -33,7 +33,10 @@ export async function fetchDBlockers() {
         const json = await res.json();
         // Handle wrapped response { data: [...] } or direct array [...]
         const data: DBlocker[] = Array.isArray(json) ? json : (json.data || []);
-        dblockerStore.set(data);
+
+        if (JSON.stringify(get(dblockerStore)) !== JSON.stringify(data)) {
+            dblockerStore.set(data);
+        }
     } catch (err) {
         console.error("Polling Error:", err);
     }
@@ -102,23 +105,5 @@ export async function switchSignal(
         }));
         
         alert("Failed to update signal. Check connection.");
-    }
-}
-
-export async function switchDBlockerSignal(id: number, config: DBlockerConfig[]) {
-    try {
-        const payload = { id, config };
-
-        const res = await fetch(`${API_BASE}/dblockers/config`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        });
-        if (!res.ok) throw new Error("Update failed");
-        const json = await res.json();
-        dblockerStore.update(items => items.map(b => b.id === id ? json.data : b));
-        console.log("DBlocker signal switched: ", JSON.stringify(json));
-    } catch (err) {
-        console.error("Failed to switch dblocker signal:", err);
     }
 }
