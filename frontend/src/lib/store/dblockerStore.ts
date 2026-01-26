@@ -13,7 +13,7 @@ export interface DBlocker {
     longitude: number;
     desc: string;
     angle_start: number;
-    config: DBlockerConfig[]; 
+    config: DBlockerConfig[];
 }
 
 // --- STORE ---
@@ -54,8 +54,8 @@ export function stopPolling() {
 // This is the function you call when user clicks a button
 export async function switchSignal(
     blockerId: number, 
-    sectorIdx: number, 
-    type: 'signal_ctrl' | 'signal_gps', 
+    sectorIdx: number,
+    type: 'signal_ctrl' | 'signal_gps',
     newValue: boolean
 ) {
     // A. Optimistic Update: Update UI *immediately* so it feels fast
@@ -102,5 +102,23 @@ export async function switchSignal(
         }));
         
         alert("Failed to update signal. Check connection.");
+    }
+}
+
+export async function switchDBlockerSignal(id: number, config: DBlockerConfig[]) {
+    try {
+        const payload = { id, config };
+
+        const res = await fetch(`${API_BASE}/dblockers/config`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        if (!res.ok) throw new Error("Update failed");
+        const json = await res.json();
+        dblockerStore.update(items => items.map(b => b.id === id ? json.data : b));
+        console.log("DBlocker signal switched: ", JSON.stringify(json));
+    } catch (err) {
+        console.error("Failed to switch dblocker signal:", err);
     }
 }
