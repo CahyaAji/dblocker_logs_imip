@@ -23,7 +23,7 @@ func SetupRouter(db *gorm.DB, mqttClient mqtt.Client) *gin.Engine {
 	deviceControlHandler := handlers.NewDeviceControlHandler(mqttClient, deviceRepo)
 
 	deviceHandler := handlers.NewDeviceHandler(deviceRepo)
-	dblockerHandler := handlers.NewDBlockerHandler(dblockerRepo)
+	dblockerHandler := handlers.NewDBlockerHandler(dblockerRepo, mqttClient)
 	actionLogHandler := handlers.NewActionLogHandler(actionLogRepo)
 	deviceLogHandler := handlers.NewDeviceLogHandler(deviceLogRepo)
 	userHandler := handlers.NewUserHandler(userRepo)
