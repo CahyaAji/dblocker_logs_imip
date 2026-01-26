@@ -93,14 +93,14 @@
                                     <div class="control-row">
                                         <div class="control-label">Blcker RC</div>
                                         <label class="switch">
-                                        <input type="checkbox" checked={config.signal_ctrl}>
+                                        <input type="checkbox" checked={config.signal_ctrl} disabled={!isEditMode}>
                                         <span class="slider"></span>
                                         </label>
                                     </div>
                                     <div class="control-row">
                                         <div class="control-label">Blcker GPS</div>
                                         <label class="switch">
-                                        <input type="checkbox" checked={config.signal_gps}>
+                                        <input type="checkbox" checked={config.signal_gps} disabled={!isEditMode}>
                                         <span class="slider"></span>
                                         </label>
                                     </div>
