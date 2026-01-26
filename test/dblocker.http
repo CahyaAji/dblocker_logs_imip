@@ -91,13 +91,13 @@ PUT http://localhost:3003/api/dblockers/config
 Content-Type: application/json
 
 {
-    "id": 6,
+    "id": 7,
     "config": [
-        {"signal_ctrl": true, "signal_gps": true},
-        {"signal_ctrl": true, "signal_gps": true},
-        {"signal_ctrl": true, "signal_gps": true},
-        {"signal_ctrl": false, "signal_gps": false},
-        {"signal_ctrl": false, "signal_gps": false},
-        {"signal_ctrl": false, "signal_gps": false}
+        {"signal_ctrl": true, "signal_gps": false},
+        {"signal_ctrl": true, "signal_gps": false},
+        {"signal_ctrl": true, "signal_gps": false},
+        {"signal_ctrl": false, "signal_gps": true},
+        {"signal_ctrl": false, "signal_gps": true},
+        {"signal_ctrl": false, "signal_gps": true}
     ]
 }
