@@ -9,7 +9,7 @@ import (
 )
 
 type Client interface {
-	Publish(topic string, qos byte, retained bool, payload interface{}) error
+	Publish(topic string, qos byte, retained bool, payload any) error
 	Subscribe(topic string, qos byte, handler paho.MessageHandler) error
 	Unsubscribe(topics ...string) error
 	Close()
@@ -47,7 +47,7 @@ func New(broker string, clientID string) (Client, error) {
 
 }
 
-func (m *mqttClient) Publish(topic string, qos byte, retained bool, payload interface{}) error {
+func (m *mqttClient) Publish(topic string, qos byte, retained bool, payload any) error {
 	token := m.pahoClient.Publish(topic, qos, retained, payload)
 	token.Wait()
 	return token.Error()
