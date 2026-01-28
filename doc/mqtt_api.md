@@ -35,3 +35,12 @@ contoh isi pesan untuk menyalakan semua 14 SSR:
 ```
 1,1,1,1,1,1,1,1,1,1,1,1,1,1
 ```
+
+
+server publish dengan setting:
+```
+h.MqttClient.Publish(topic, 1, true, payload)
+
+qos = 1
+retained = true
+```
