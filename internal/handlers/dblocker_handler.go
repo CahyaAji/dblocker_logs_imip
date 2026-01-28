@@ -4,7 +4,7 @@ import (
 	"dblocker_logs_server/internal/infrastructure/mqtt"
 	"dblocker_logs_server/internal/models"
 	"dblocker_logs_server/internal/repository"
-	"encoding/json"
+	"dblocker_logs_server/internal/utils"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -115,6 +115,7 @@ func (h *DBlockerHandler) UpdateDBlockerConfig(c *gin.Context) {
 	dblocker, err := h.Repo.FindByID(input.ID)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "dblocker not found"})
+		return
 	}
 
 	if err := h.Repo.UpdateConfig(input.ID, input.Config); err != nil {
@@ -122,14 +123,29 @@ func (h *DBlockerHandler) UpdateDBlockerConfig(c *gin.Context) {
 		return
 	}
 
-	topic := fmt.Sprintf("dblocker_config_%s", dblocker.SerialNumb)
-	payload, err := json.Marshal(input.Config)
+	topic := fmt.Sprintf("dbl/%s/c", dblocker.SerialNumb)
+
+	// payload, err := json.Marshal(input.Config)
+
+	bitmaskPayload, err := utils.DBlockerConfigToBitmask(
+		input.Config,
+		true,
+		true,
+	)
+
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to marshall config"})
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": err.Error(),
+		})
 		return
 	}
 
-	if err := h.MqttClient.Publish(topic, 0, false, payload); err != nil {
+	payload := []byte{
+		byte(bitmaskPayload >> 8),
+		byte(bitmaskPayload),
+	}
+
+	if err := h.MqttClient.Publish(topic, 1, true, payload); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to publish to mqtt"})
 		return
 	}
