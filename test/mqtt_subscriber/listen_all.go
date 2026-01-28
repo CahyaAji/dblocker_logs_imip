@@ -4,15 +4,75 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 )
 
+func decodeAndPrintCommand(payload []byte) {
+	if len(payload) != 2 {
+		fmt.Printf("CMD payload invalid length: %d\n", len(payload))
+		return
+	}
+
+	mask := uint16(payload[0])<<8 | uint16(payload[1])
+
+	fmt.Println("───── DBlocker Command ─────")
+	fmt.Printf("Raw mask : 0x%04X\n", mask)
+	fmt.Printf("Binary   : %016b\n", mask)
+	fmt.Println("States:")
+
+	print := func(name string, bit int) {
+		state := "OFF"
+		if mask&(1<<bit) != 0 {
+			state = "ON"
+		}
+		fmt.Printf("  %-16s : %s\n", name, state)
+	}
+
+	print("SignalGPS[0]", 0)
+	print("SignalCtrl[0]", 1)
+
+	print("SignalGPS[1]", 2)
+	print("SignalCtrl[1]", 3)
+
+	print("SignalGPS[2]", 4)
+	print("SignalCtrl[2]", 5)
+
+	print("FanMaster", 6)
+
+	print("SignalGPS[3]", 7)
+	print("SignalCtrl[3]", 8)
+
+	print("SignalGPS[4]", 9)
+	print("SignalCtrl[4]", 10)
+
+	print("SignalGPS[5]", 11)
+	print("SignalCtrl[5]", 12)
+
+	print("FanSlave", 13)
+
+	fmt.Println("───────────────────────────")
+}
+
 // 1. Define the Message Handler
 // This function is called whenever a message is received.
-var messagePubHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Message) {
-	fmt.Printf("Received message: %s from topic: %s\n", msg.Payload(), msg.Topic())
+var messagePubHandler mqtt.MessageHandler = func(
+	client mqtt.Client,
+	msg mqtt.Message,
+) {
+	topic := msg.Topic()
+	parts := strings.Split(topic, "/")
+
+	// Expect: dbl/{serial}/c
+	if len(parts) >= 3 && parts[2] == "c" {
+		decodeAndPrintCommand(msg.Payload())
+		return
+	}
+
+	// Other topics
+	fmt.Printf("Ignored topic: %s\n", topic)
 }
 
 var connectHandler mqtt.OnConnectHandler = func(client mqtt.Client) {
