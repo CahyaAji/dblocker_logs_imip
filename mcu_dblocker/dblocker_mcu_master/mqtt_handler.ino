@@ -18,7 +18,7 @@ void mqttConnect() {
       // Debug print
       SlaveSerial.print("Subscribed: ");
       SlaveSerial.println(topic_sub);
-      mqttClient.publish(topic_pub, "0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0");
+      mqttClient.publish(topic_pub, "ini coba mqttConnect");
     } else {
       // Debug print
       SlaveSerial.print("failed, rc=");
@@ -32,7 +32,8 @@ void mqttConnect() {
 
 // MQTT (Handles incoming messages)
 void mqttCallback(char* topic, byte* payload, unsigned int length) {
-  if (topic == topic_sub) {
+  
+  if (strcmp(topic, topic_sub) == 0) {
     bool success = decodeBitmask(payload, length);
     if (!success) {
       // Debug print
@@ -42,13 +43,11 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
 }
 
 
-void applyOutputs(
-  bool master[7],
-  bool slave[7]
-) {
+void applyOutputs(bool master[7], bool slave[7]) {
+
   // Master pins
   for (int i = 0; i < 7; i++) {
-    digitalWrite(jammerPins[i], master[i]);
+    digitalWrite(jammerPins[i], master[i] ? HIGH : LOW);
   }
 
   // Slave command
@@ -62,6 +61,7 @@ void applyOutputs(
 
   SlaveSerial.println(slaveCmd);
 }
+
 
 bool decodeBitmask(byte* payload, unsigned int length) {
 
