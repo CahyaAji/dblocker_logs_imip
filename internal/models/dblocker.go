@@ -1,8 +1,8 @@
 package models
 
 type DBlockerConfig struct {
-	SignalCtrl bool `json:"signal_ctrl" default:"false"`
 	SignalGPS  bool `json:"signal_gps" default:"false"`
+	SignalCtrl bool `json:"signal_ctrl" default:"false"`
 }
 
 type DBlocker struct {
