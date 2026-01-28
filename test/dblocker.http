@@ -4,7 +4,7 @@ Content-Type: application/json
 
 {
     "name": "Drone Blocker timur",
-    "serial_numb": "STM-1001",
+    "serial_numb": "250002",
     "latitude": -7.788432918834558,
     "longitude": 110.44306970000933,
     "desc": "Drone blocker di timur",
@@ -22,7 +22,7 @@ Content-Type: application/json
 
 # {
 #     "name": "Drone Blocker Barat",
-#     "serial_numb": "SCM-1002",
+#     "serial_numb": "250001",
 #     "latitude": -7.786959801210232,
 #     "longitude": 110.4220920495705,
 #     "desc": "Drone blocker di barat",
@@ -83,7 +83,7 @@ Content-Type: application/json
 
 
 ### 5. Delete DBlocker by ID
-DELETE http://localhost:3003/api/dblockers/8
+DELETE http://localhost:3003/api/dblockers/7
 
 
 ### 6. Update DBlocker Config
