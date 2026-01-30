@@ -56,13 +56,22 @@
 
     $effect(() => {
         const storeData = $dblockerStore;
+
+        // If any item is being edited, don't sync from the store.
+        if (editingIds.length > 0) {
+            return;
+        }
+
         clearTimeout(debounceTimer);
         debounceTimer = setTimeout(() => {
-            if (JSON.stringify(dblockers) !== JSON.stringify(storeData)) {
+            // Sort store data to ensure consistent order for comparison
+            const sortedStoreData = [...storeData].sort((a, b) => a.id - b.id);
+
+            if (JSON.stringify(dblockers) !== JSON.stringify(sortedStoreData)) {
                 console.log("DBlockersList: Store data changed, updating local state.");
-                dblockers = storeData;
+                dblockers = sortedStoreData;
             }
-        }, 3000);
+        }, 500);
         return () => clearTimeout(debounceTimer);
     });
 
