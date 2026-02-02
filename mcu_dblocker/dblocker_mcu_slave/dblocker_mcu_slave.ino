@@ -7,6 +7,12 @@ HardwareSerial CmdSerial(PA10, PA9);
 // Digital outputs (SSR)
 uint32_t outPins[7] = { PB10, PB2, PA8, PB6, PB7, PB8, PB9 };
 
+// Current sensors (ADC)
+uint32_t currentSensorPins[9] = {
+  PA1, PA2, PA3, PA4, PA5, PA6, PA7, PB0, PB1
+};
+unsigned long lastSensorSend = 0;
+
 #define CMD_BUF_SIZE 128
 char cmdBuf[CMD_BUF_SIZE];
 uint8_t cmdIndex = 0;
@@ -18,6 +24,30 @@ uint8_t crc8(const char *data) {
     crc ^= (uint8_t)(*data++);
   }
   return crc;
+}
+
+void sendSensorsToMaster() {
+  char payload[64];
+  int v[9];
+  
+  // Read all sensors
+  for (int i = 0; i < 9; i++) { v[i] = analogRead(currentSensorPins[i]); }
+
+  // Format: CUR:val1,val2,val3...
+  snprintf(payload, sizeof(payload), "CUR:%d,%d,%d,%d,%d,%d,%d,%d,%d",
+           v[0], v[1], v[2], v[3], v[4], v[5], v[6], v[7], v[8]);
+
+  uint8_t crc = crc8(payload);
+
+  // debug print
+  Serial.print("Sending Sensors to Master: "); Serial.println(payload);
+
+  CmdSerial.print('$');
+  CmdSerial.print(payload);
+  CmdSerial.print('|');
+  if(crc < 0x10) CmdSerial.print('0');
+  CmdSerial.print(crc, HEX);
+  CmdSerial.println();
 }
 
 // -------- SET HANDLER --------
@@ -133,5 +163,11 @@ void loop() {
       Serial.println("Buffer Overflow!");
       cmdIndex = 0;
     }
+  }
+
+  unsigned long now = millis();
+  if (now - lastSensorSend >= 2000) {
+    lastSensorSend = now;
+    sendSensorsToMaster();
   }
 }

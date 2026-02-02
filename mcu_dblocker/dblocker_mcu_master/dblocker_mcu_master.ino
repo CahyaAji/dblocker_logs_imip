@@ -3,6 +3,7 @@
 #include <SPI.h>
 #include <Ethernet.h>
 #include <PubSubClient.h>
+#include <max6675.h>
 
 #define LED_PIN PC13
 
@@ -17,7 +18,7 @@
 // Temperature
 #define MAX_SCK PB13
 #define MAX_MISO PB14
-#define MAX_MOSI PB15
+// #define MAX_MOSI PB15
 #define MAX_CS_1 PA8  // Sensor 1
 #define MAX_CS_2 PB2  // Sensor 2
 
@@ -30,19 +31,30 @@ uint32_t outPins[7] = { PB10, PB12, PA12, PB6, PB7, PB8, PB9 };
 //! check SPI2 menggunakan PB12, ganti ke PA15 jika error
 
 // current sensor (analog read)
-uint32_t currentSensorPins[9] = { PA0, PA1, PA2, PA3, PA4, PA5, PA6, PA7, PB0 };
+uint32_t hallSensorPins[9] = { PA0, PA1, PA2, PA3, PA4, PA5, PA6, PA7, PB0 };
 // int currentValue[9];
 
+MAX6675 temp1(MAX_SCK, MAX_CS_1, MAX_MISO);
+MAX6675 temp2(MAX_SCK, MAX_CS_2, MAX_MISO);
+
 byte mac[] = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED };
+// Ganti dengan IP MQTT Broker
 IPAddress mqtt_broker(148, 230, 101, 142);
 
 // MQTT, Change size if needed
 char serial_numb[10];
 char topic_sub[64];
 char topic_pub[64];
+char topic_sta[64];
 
+int allHallSensors[18];
+float temperatures[2];
 bool lastSlaveState[7] = { 0, 0, 0, 0, 0, 0, 0 };  // Memory of what Slave should be doing
-unsigned long lastMqttRetry = 0;                   // For non-blocking timer
+
+unsigned long lastMqttRetry = 0;
+unsigned long lastPublish = 0;
+unsigned long lastSlaveMessage = 0;
+bool slaveConnected = false;
 
 EthernetClient ethClient;
 PubSubClient mqttClient(ethClient);
@@ -53,50 +65,117 @@ uint8_t crc8(const char* data) {
   return crc;
 }
 
+// --- SYNC TO SLAVE ---
 void syncSlave() {
-  char payload[32];
-  // Format: SET:1,0,1,0,1,0,1
+  char payload[64];
   snprintf(payload, sizeof(payload), "SET:%d,%d,%d,%d,%d,%d,%d",
            lastSlaveState[0], lastSlaveState[1], lastSlaveState[2],
            lastSlaveState[3], lastSlaveState[4], lastSlaveState[5], lastSlaveState[6]);
 
   uint8_t crc = crc8(payload);
 
-  // Wrap in Start ($) and End (\n) markers
   SlaveSerial.print('$');
   SlaveSerial.print(payload);
   SlaveSerial.print('|');
-  if (crc < 0x10) SlaveSerial.print('0');  // Hex padding
+  if (crc < 0x10) SlaveSerial.print('0');
   SlaveSerial.print(crc, HEX);
   SlaveSerial.println();
 }
 
+// --- HANDLE INCOMING SLAVE DATA ---
+void handleSlaveData(char* rxBuf) {
+  // Update Slave "Heartbeat" timestamp
+  lastSlaveMessage = millis();
+  slaveConnected = true;
+
+  if (strstr(rxBuf, "REQ:SYNC")) {
+    syncSlave();
+  } else if (strncmp(rxBuf, "CUR:", 4) == 0) {
+    char* ptr = rxBuf + 4;
+    for (int i = 9; i < 18; i++) {
+      if (ptr) {
+        allHallSensors[i] = atoi(ptr);
+        ptr = strchr(ptr, ',');
+        if (ptr) ptr++;
+      }
+    }
+  }
+}
+
+
+// --- PUBLISH DATA ---
+void publishData() {
+  // 1. Read Master Hall Sensors
+  for (int i = 0; i < 9; i++) {
+    allHallSensors[i] = analogRead(hallSensorPins[i]);
+  }
+
+  // 2. Read Temperatures (raw float, but no float formatting)
+  float t1 = temp1.readCelsius();
+  delay(10);
+  float t2 = temp2.readCelsius();
+
+  // Convert to fixed-point (°C × 100)
+  int t1i = isnan(t1) ? -9900 : (int)(t1 * 100);
+  int t2i = isnan(t2) ? -9900 : (int)(t2 * 100);
+
+  // 3. Check Slave Health
+  if (millis() - lastSlaveMessage > 5000) {
+    slaveConnected = false;
+    for (int i = 9; i < 18; i++) {
+      allHallSensors[i] = 0;
+    }
+  }
+
+  // 4. Build MQTT Message
+  static char msg[300];
+  msg[0] = '\0';
+
+  // 18 Hall Sensors
+  for (int i = 0; i < 18; i++) {
+    char val[12];
+    snprintf(val, sizeof(val), "%d,", allHallSensors[i]);
+    strcat(msg, val);
+  }
+
+  // Temps (fixed-point) + slave flag
+  // Format:
+  // H0,H1,...,H17,T1i,T2i|S
+  char tail[64];
+  snprintf(tail, sizeof(tail), "%d,%d|%d",
+           t1i, t2i,
+           slaveConnected ? 1 : 0);
+
+  strcat(msg, tail);
+
+  // 5. Publish
+  mqttClient.publish(topic_pub, msg);
+
+  // Activity indicator
+  digitalWrite(LED_PIN, !digitalRead(LED_PIN));
+}
+
+
+// --- MQTT CALLBACK ---
 void mqttCallback(char* topic, byte* payload, unsigned int length) {
-  // Check if message is exactly 2 bytes (bitmask)
   if (length == 2) {
     uint16_t mask = ((uint16_t)payload[0] << 8) | payload[1];
 
-    // Update Master Pins (bits 0-6)
     for (int i = 0; i < 7; i++) {
-      bool val = mask & (1 << i);
-      digitalWrite(outPins[i], val ? HIGH : LOW);
+      digitalWrite(outPins[i], (mask & (1 << i)) ? HIGH : LOW);
     }
-
-    // Update Slave State Memory (bits 7-13)
     for (int i = 0; i < 7; i++) {
-      lastSlaveState[i] = mask & (1 << (i + 7));
+      lastSlaveState[i] = (mask & (1 << (i + 7)));
     }
-
-    syncSlave();  // Send the new memory to the Slave
+    syncSlave();
   }
 }
 
 void generateIds() {
-  // Change Serial Number
   snprintf(serial_numb, sizeof(serial_numb), "250001");
-
   snprintf(topic_sub, sizeof(topic_sub), "dbl/%s/c", serial_numb);
   snprintf(topic_pub, sizeof(topic_pub), "dbl/%s/s", serial_numb);
+  snprintf(topic_sta, sizeof(topic_sta), "dbl/%s/sta", serial_numb); // Status Topic
 }
 
 void setup() {
@@ -108,7 +187,7 @@ void setup() {
   digitalWrite(W5500_RST, LOW);
   delay(20);
   digitalWrite(W5500_RST, HIGH);
-  delay(150);  //delay for ethernet to be ready
+  delay(200);  //delay for ethernet to be ready
 
   pinMode(LED_PIN, OUTPUT);
   pinMode(WAKE_SLAVE, OUTPUT);
@@ -144,53 +223,55 @@ void setup() {
 
   // Debug print
   // SlaveSerial.println("connecting to broker");
-  // mqttClient.setBufferSize(512);
+  mqttClient.setBufferSize(512);
   mqttClient.setServer(mqtt_broker, 1883);
   mqttClient.setCallback(mqttCallback);
 }
 
 void loop() {
-
   Ethernet.maintain();
 
-  // Non blocking MQTT Reconnect
+  // 1. CONNECTION MANAGER
   if (!mqttClient.connected()) {
-    unsigned long now = mills();
+    unsigned long now = millis();
     if (now - lastMqttRetry > 5000) {
       lastMqttRetry = now;
-      if (mqttClient.connect(serial_numb)) {
+      
+      // Connect with LWT (Last Will and Testament)
+      // If we die, broker publishes "OFFLINE" to topic_sta
+      if (mqttClient.connect(serial_numb, NULL, NULL, topic_sta, 1, true, "OFFLINE")) {
         mqttClient.subscribe(topic_sub);
+        // We are alive, publish ONLINE
+        mqttClient.publish(topic_sta, "ONLINE", true);
       }
     }
   } else {
     mqttClient.loop();
   }
 
-  if (SlaveSerial.available()) {
-    static char rxBuf[32];
-    static int rxIdx = 0;
-    char c = SlaveSerial.read();
-
-    if (c == '$') rxIdx = 0;
-    else if (c == '\n' || c == '\r') {
-      rxBuf[rxIdx] = 0;
-      if (strstr(rxBuf, "REQ:SYNC")) syncSlave();
-      rxIdx = 0;
-    } else if (rxIdx < 31) rxBuf[rxIdx++] = c;
+  // 2. PUBLISH TIMER (Run even if disconnected to keep logic moving)
+  unsigned long now = millis();
+  if (now - lastPublish > 2000) {
+    lastPublish = now;
+    if (mqttClient.connected()) {
+      publishData();
+    }
   }
 
-  // if (!mqttClient.connected()) {
-  //   unsigned long now = millis();
-  //   // Attempt to reconnect every 3 seconds without stopping the code
-  //   if (now - lastReconnectAttempt > 3000) {
-  //     lastReconnectAttempt = now;
-  //     if (mqttConnect()) {
-  //       lastReconnectAttempt = 0;
-  //     } else {
-  //       notifLed(1);  // Error blink
-  //     }
-  //   }
-  // } else {
-  //   mqttClient.loop();
-  // }
+  // 3. SLAVE LISTENER
+  static char rxBuf[128];
+  static int rxIdx = 0;
+  while (SlaveSerial.available()) {
+    char c = SlaveSerial.read();
+    if (c == '$') rxIdx = 0;
+    else if (c == '\n' || c == '\r') {
+      if (rxIdx > 0) {
+        rxBuf[rxIdx] = 0;
+        handleSlaveData(rxBuf);
+        rxIdx = 0;
+      }
+    } else if (rxIdx < 127) {
+      rxBuf[rxIdx++] = c;
+    }
+  }
 }
