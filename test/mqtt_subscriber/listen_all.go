@@ -13,6 +13,7 @@ import (
 func decodeAndPrintCommand(payload []byte) {
 	if len(payload) != 2 {
 		fmt.Printf("CMD payload invalid length: %d\n", len(payload))
+		fmt.Printf("Payload: %x\n", payload)
 		return
 	}
 
@@ -72,7 +73,8 @@ var messagePubHandler mqtt.MessageHandler = func(
 	}
 
 	// Other topics
-	fmt.Printf("Ignored topic: %s\n", topic)
+	fmt.Printf("Topic: %s\n", topic)
+	fmt.Printf("Payload: %s\n", string(msg.Payload()))
 }
 
 var connectHandler mqtt.OnConnectHandler = func(client mqtt.Client) {
