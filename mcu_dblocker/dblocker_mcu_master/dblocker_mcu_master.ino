@@ -2,6 +2,7 @@
 //! hilangkan delay
 #include <SPI.h>
 #include <Ethernet.h>
+#include <utility/w5100.h>
 #include <PubSubClient.h>
 #include <max6675.h>
 
@@ -158,6 +159,12 @@ void publishData() {
 
 // --- MQTT CALLBACK ---
 void mqttCallback(char* topic, byte* payload, unsigned int length) {
+
+  if (length == 5 && strncmp((char*)payload, "SLEEP", 5) == 0) {
+    goToSleep();
+    return;
+  }
+
   if (length == 2) {
     uint16_t mask = ((uint16_t)payload[0] << 8) | payload[1];
 
@@ -193,6 +200,8 @@ void setup() {
   pinMode(WAKE_SLAVE, OUTPUT);
   digitalWrite(WAKE_SLAVE, HIGH);
 
+  pinMode(WOL_INT, INPUT_PULLUP);
+
   // Setup output SSR
   for (int i = 0; i < 7; i++) {
     pinMode(outPins[i], OUTPUT);
@@ -200,6 +209,8 @@ void setup() {
   }
 
   generateIds();
+
+  __HAL_RCC_PWR_CLK_ENABLE();
 
   // W5500 ethernet
   SPI.setMOSI(W5500_MOSI);
@@ -274,4 +285,51 @@ void loop() {
       rxBuf[rxIdx++] = c;
     }
   }
+}
+
+
+
+void wakeUpHandler() {
+  // Interrupt handler must exist, but does nothing
+}
+
+void enableW5500WOL() {
+  // Enable WOL bit in MR (Bit 5)
+  uint8_t mr = W5100.readMR();
+  W5100.writeMR(mr | 0x20); 
+  
+  // Enable Interrupt Mask for Magic Packet (Bit 5)
+  uint8_t imr = W5100.readIMR();
+  W5100.writeIMR(imr | 0x20); 
+}
+
+void goToSleep() {
+  mqttClient.publish(topic_sta, "SLEEPING");
+  delay(100); 
+
+  // 1. Setup WOL on W5500
+  enableW5500WOL();
+
+  // 2. Attach Interrupt to PC14 (WOL_INT)
+  // W5500 INT pin goes LOW (Falling) on packet detection
+  attachInterrupt(digitalPinToInterrupt(WOL_INT), wakeUpHandler, FALLING);
+  
+  // 3. Suspend Tick (Stop internal timers)
+  HAL_SuspendTick();
+  
+  // 4. Enter STOP Mode (Deep Sleep)
+  HAL_PWR_EnterSTOPMode(PWR_LOWPOWERREGULATOR_ON, PWR_STOPENTRY_WFI);
+  
+  // --- DEVICE SLEEPS HERE ---
+  
+  // 5. Wake Up Routine
+  HAL_ResumeTick(); // Restore timers
+  detachInterrupt(digitalPinToInterrupt(WOL_INT));
+  
+  // Disable WOL on W5500 so normal interrupts work again
+  uint8_t mr = W5100.readMR();
+  W5100.writeMR(mr & ~0x20); 
+
+  mqttClient.publish(topic_sta, "ONLINE");
+  lastMqttRetry = 0; 
 }
