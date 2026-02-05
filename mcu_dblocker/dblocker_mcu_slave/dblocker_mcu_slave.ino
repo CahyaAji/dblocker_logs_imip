@@ -1,173 +1,173 @@
-// Chip: STM32F411CEU6 or STM32F401CCU6
-#define LED_PIN PC13
+// Chip: STM32F411CEU6 or STM32F401CCU6, // PB2 ganti aja ke PB12
+// SLAVE (STM32F411/F401) - FAILSAFE EDITION
+// #include <Arduino.h>
+#include <IWatchdog.h>
 
-// Master-Slave communication on Pins PA10 (RX) and PA9 (TX)
+#define LED_PIN PC13
+#define CMD_PIN PA0 // RS485 Direction Pin (Connect to DE/RE)
+
+// Communication
 HardwareSerial CmdSerial(PA10, PA9); 
 
-// Digital outputs (SSR)
+// Outputs (PB12 used for safety)
 uint32_t outPins[7] = { PB10, PB2, PA8, PB6, PB7, PB8, PB9 };
 
-// Current sensors (ADC)
-uint32_t currentSensorPins[9] = {
-  PA1, PA2, PA3, PA4, PA5, PA6, PA7, PB0, PB1
-};
-unsigned long lastSensorSend = 0;
+// Sensors
+uint32_t hallSensorPins[9] = { PA1, PA2, PA3, PA4, PA5, PA6, PA7, PB0, PB1 };
+int allHallSensors[9];
 
-#define CMD_BUF_SIZE 128
-char cmdBuf[CMD_BUF_SIZE];
-uint8_t cmdIndex = 0;
+// State Variables
+bool isSleeping = false;
+unsigned long lastValidPacket = 0; // Timestamp of last Master contact
+const unsigned long TIMEOUT_MS = 10000; // 10 Seconds Failsafe
 
-// -------- CRC-8 --------
-uint8_t crc8(const char *data) {
+uint8_t crc8(const char* data) {
   uint8_t crc = 0;
-  while (*data) {
-    crc ^= (uint8_t)(*data++);
-  }
+  while (*data) { crc ^= (uint8_t)(*data++); }
   return crc;
 }
 
-void sendSensorsToMaster() {
-  char payload[64];
-  int v[9];
-  
-  // Read all sensors
-  for (int i = 0; i < 9; i++) { v[i] = analogRead(currentSensorPins[i]); }
+// --- SEND DATA (Only when asked) ---
+void replyToMaster() {
+  // Read Sensors
+  for(int i=0; i<9; i++) allHallSensors[i] = analogRead(hallSensorPins[i]);
 
-  // Format: CUR:val1,val2,val3...
-  snprintf(payload, sizeof(payload), "CUR:%d,%d,%d,%d,%d,%d,%d,%d,%d",
-           v[0], v[1], v[2], v[3], v[4], v[5], v[6], v[7], v[8]);
+  // Enable RS485 TX
+  digitalWrite(CMD_PIN, HIGH); delay(2); 
 
-  uint8_t crc = crc8(payload);
-
-  // debug print
-  Serial.print("Sending Sensors to Master: "); Serial.println(payload);
-
-  CmdSerial.print('$');
-  CmdSerial.print(payload);
-  CmdSerial.print('|');
-  if(crc < 0x10) CmdSerial.print('0');
-  CmdSerial.print(crc, HEX);
+  // Send Packet
+  CmdSerial.print("CUR:");
+  for(int i=0; i<9; i++) {
+    CmdSerial.print(allHallSensors[i]);
+    if(i < 8) CmdSerial.print(",");
+  }
   CmdSerial.println();
+  CmdSerial.flush(); // Wait for data to fly out
+
+  // Disable RS485 TX
+  digitalWrite(CMD_PIN, LOW);
 }
 
-// -------- SET HANDLER --------
-void handleSET(char *payload) {
-  // debug print
-  Serial.print("Parsing SET payload: ");
-  Serial.println(payload);
-
-  char *ptr = payload;
-  for (int i = 0; i < 7; i++) {
-    if (ptr == NULL) {
-      // debug print
-      Serial.println("Error: Payload ended early!");
-      break;
-    }
-
-    int val = atoi(ptr);
-    digitalWrite(outPins[i], val ? HIGH : LOW);
-    
-    // debug print
-    Serial.print("SSR Index "); Serial.print(i);
-    Serial.print(" set to "); Serial.println(val ? "ON" : "OFF");
-
-    ptr = strchr(ptr, ','); 
-    if (ptr) ptr++; 
+// --- EMERGENCY SHUTDOWN ---
+void failsafeShutdown() {
+  // Only shut down if we think we are active
+  // If we are already sleeping, we stay sleeping
+  if (!isSleeping) {
+     for(int i=0; i<7; i++) digitalWrite(outPins[i], LOW);
+     // Note: We do NOT set isSleeping=true, because we want to 
+     // wake up instantly when the cable reconnects.
   }
 }
 
-// -------- COMMAND PROCESS --------
-void processCommand(char *cmd) {
-  // debug print
-  Serial.print("Raw Command Received: "); Serial.println(cmd);
+void processCommand(char* cmd) {
+  // Update Heartbeat Timestamp (We are alive!)
+  lastValidPacket = millis();
 
-  char *sep = strchr(cmd, '|');
-  if (!sep) {
-    // debug print
-    Serial.println("Format Error: No CRC separator '|' found");
+  // 1. SLEEP
+  if (strstr(cmd, "SLEEP")) {
+    isSleeping = true;
+    for(int i=0; i<7; i++) digitalWrite(outPins[i], LOW);
     return;
   }
 
-  *sep = 0; // Terminate string before CRC
-  char *rxCrcStr = sep + 1;
-
-  uint8_t rxCrc = (uint8_t)strtol(rxCrcStr, NULL, 16);
-  uint8_t calcCrc = crc8(cmd);
-
-  if (rxCrc != calcCrc) {
-    // debug print
-    Serial.print("CRC Mismatch! Calculated: "); Serial.print(calcCrc, HEX);
-    Serial.print(" Received: "); Serial.println(rxCrc, HEX);
+  // 2. WAKE
+  if (strstr(cmd, "WAKE")) {
+    isSleeping = false;
+    replyToMaster();
     return;
   }
 
+  // 3. RESET
+  if (strstr(cmd, "RESET")) {
+    delay(100);
+    NVIC_SystemReset();
+    return;
+  }
+
+  // 4. SET (Control & Heartbeat)
+  // If we get a SET command, we apply it and reset failsafe.
   if (strncmp(cmd, "SET:", 4) == 0) {
-    handleSET(cmd + 4);
-    CmdSerial.println("OK:SET");
-  } else {
-    // debug print
-    Serial.print("Unknown Command: "); Serial.println(cmd);
+    int states[7];
+    int parsed = sscanf(cmd, "SET:%d,%d,%d,%d,%d,%d,%d", 
+           &states[0], &states[1], &states[2], &states[3], &states[4], &states[5], &states[6]);
+    
+    if (parsed == 7) {
+      // Force wake if we were sleeping (Auto-Recovery)
+      isSleeping = false;
+
+      for(int i=0; i<7; i++) {
+        digitalWrite(outPins[i], states[i] ? HIGH : LOW);
+      }
+      // CRITICAL: Always reply so Master knows we are alive
+      replyToMaster();
+    }
+  }
+
+  // 5. REQ (Manual Ping)
+  if (strstr(cmd, "REQ")) {
+      lastValidPacket = millis();
+      replyToMaster();
   }
 }
 
-// -------- SETUP --------
-void setup() {
-  // Hardware UART for Master
+void verifyAndExecute(char* buf) {
+    char* pipePtr = strchr(buf, '|');
+    if (!pipePtr) return; 
+
+    *pipePtr = 0; 
+    char* payload = buf;
+    char* crcHex = pipePtr + 1; 
+
+    if (crc8(payload) == (uint8_t) strtol(crcHex, NULL, 16)) {
+        processCommand(payload);
+    }
+}
+
+void setup(){
   CmdSerial.begin(9600);
-
-  // USB CDC Serial for Debugging
-  Serial.begin(115200); 
-  // Note: On STM32, Serial doesn't need "while(!Serial)" unless you want to wait 
-  // for the monitor to open before starting.
-
+  pinMode(CMD_PIN, OUTPUT); digitalWrite(CMD_PIN, LOW); // Listen Mode
   pinMode(LED_PIN, OUTPUT);
+
   for (int i = 0; i < 7; i++) {
     pinMode(outPins[i], OUTPUT);
     digitalWrite(outPins[i], LOW);
   }
+  
+  IWatchdog.begin(10000000); // 10s HW Watchdog
+  lastValidPacket = millis(); // Initialize timer
 
-  // debug print
-  Serial.println("===============================");
-  Serial.println("Slave Awake & Waiting for Master");
-  Serial.println("===============================");
-
-  // --- THE HANDSHAKE ---
-  delay(1000); // Wait for Master to be ready
-  // debug print
-  Serial.println("Sending Sync Request to Master...");
-  CmdSerial.println("$REQ:SYNC|00"); 
+  // Ask for Sync on Boot
+  digitalWrite(CMD_PIN, HIGH); delay(2);
+  CmdSerial.println("REQ:SYNC");
+  CmdSerial.flush();
+  digitalWrite(CMD_PIN, LOW);
 }
 
-// -------- LOOP --------
-void loop() {
+void loop(){
+  IWatchdog.reload(); 
+
+  // --- 1. RECEIVE DATA ---
+  static char rxBuf[64];
+  static int rxIdx = 0;
+
   while (CmdSerial.available()) {
     char c = CmdSerial.read();
-
-    if (c == '$') { 
-      // debug print
-      Serial.println("SOF '$' detected, starting new buffer.");
-      cmdIndex = 0; 
-    } 
-    else if (c == '\n' || c == '\r') {
-      if (cmdIndex > 0) {
-        cmdBuf[cmdIndex] = 0;
-        processCommand(cmdBuf);
-        cmdIndex = 0;
+    if (c == '$') { rxIdx = 0; digitalWrite(LED_PIN, LOW); } 
+    else if (c == '\r' || c == '\n') {
+      if (rxIdx > 0) {
+        rxBuf[rxIdx] = 0; 
+        verifyAndExecute(rxBuf); 
+        rxIdx = 0;
       }
+      digitalWrite(LED_PIN, HIGH); 
     } 
-    else if (cmdIndex < CMD_BUF_SIZE - 1) {
-      cmdBuf[cmdIndex++] = c;
-    }
-    else {
-      // debug print
-      Serial.println("Buffer Overflow!");
-      cmdIndex = 0;
-    }
+    else if (rxIdx < 63) { rxBuf[rxIdx++] = c; }
   }
 
-  unsigned long now = millis();
-  if (now - lastSensorSend >= 2000) {
-    lastSensorSend = now;
-    sendSensorsToMaster();
+  // --- 2. FAILSAFE CHECK (The Safety Feature) ---
+  // If Master hasn't talked to us in 10 seconds, KILL OUTPUTS.
+  if (millis() - lastValidPacket > TIMEOUT_MS) {
+      failsafeShutdown();
+      // Optional: Blink LED fast to indicate error?
   }
 }
