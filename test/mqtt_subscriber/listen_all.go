@@ -10,7 +10,7 @@ import (
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 )
 
-func decodeAndPrintCommand(payload []byte) {
+func decodeAndPrintCommand(topic string, payload []byte) {
 	if len(payload) != 2 {
 		fmt.Printf("CMD payload invalid length: %d\n", len(payload))
 		fmt.Printf("Payload: %x\n", payload)
@@ -20,6 +20,7 @@ func decodeAndPrintCommand(payload []byte) {
 	mask := uint16(payload[0])<<8 | uint16(payload[1])
 
 	fmt.Println("───── DBlocker Command ─────")
+	fmt.Printf("Topic    : %s\n", topic)
 	fmt.Printf("Raw mask : 0x%04X\n", mask)
 	fmt.Printf("Binary   : %016b\n", mask)
 	fmt.Println("States:")
@@ -68,7 +69,7 @@ var messagePubHandler mqtt.MessageHandler = func(
 
 	// Expect: dbl/{serial}/c
 	if len(parts) >= 3 && parts[2] == "c" {
-		decodeAndPrintCommand(msg.Payload())
+		decodeAndPrintCommand(topic, msg.Payload())
 		return
 	}
 
