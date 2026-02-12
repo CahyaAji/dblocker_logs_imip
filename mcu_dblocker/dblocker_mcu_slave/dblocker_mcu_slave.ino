@@ -10,7 +10,7 @@
 HardwareSerial CmdSerial(PA10, PA9); 
 
 // Outputs (PB12 used for safety)
-uint32_t outPins[7] = { PB10, PB2, PA8, PB6, PB7, PB8, PB9 };
+uint32_t outPins[7] = { PB10, PB12, PA8, PB6, PB7, PB8, PB9 };
 
 // Sensors
 uint32_t hallSensorPins[9] = { PA1, PA2, PA3, PA4, PA5, PA6, PA7, PB0, PB1 };

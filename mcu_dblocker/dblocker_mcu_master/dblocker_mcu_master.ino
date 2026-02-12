@@ -20,7 +20,7 @@
 #define MAX_SCK PB13
 #define MAX_MISO PB14
 #define MAX_CS_1 PA8  
-#define MAX_CS_2 PB2  
+#define MAX_CS_2 PA15 // from PB2  
 
 HardwareSerial SlaveSerial(PA10, PA9); 
 
