@@ -20,7 +20,7 @@ func main() {
 
 	mqttBroker := os.Getenv("MQTT_BROKER")
 	if mqttBroker == "" {
-		mqttBroker = "tcp://148.230.101.142:1883"
+		mqttBroker = "tcp://127.0.0.1:1883"
 	}
 
 	mqttClient, err := mqtt.New(mqttBroker, "dblocker-server")

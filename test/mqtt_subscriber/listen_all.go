@@ -92,7 +92,9 @@ func main() {
 	// Using a public test broker for demonstration.
 	// Change "tcp://broker.hivemq.com:1883" to your specific broker URL if needed.
 	opts := mqtt.NewClientOptions()
-	opts.AddBroker("tcp://148.230.101.142:1883")
+	// opts.AddBroker("tcp://148.230.101.142:1883")
+	// opts.AddBroker("tcp://192.168.100.209:1883")
+	opts.AddBroker("tcp://127.0.0.1:1883")
 	opts.SetClientID("listener-all")
 	opts.SetDefaultPublishHandler(messagePubHandler)
 	opts.OnConnect = connectHandler
