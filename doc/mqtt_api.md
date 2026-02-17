@@ -1,11 +1,18 @@
 ### 1. dblocker subscribe/publish topic
 ```
-sub topic: dbl/[serial_numb]/c
-pub topic: dbl/[serial_numb]/s
-```
+IP address broker: 10.88.81.1
+username: DBL0KER
+password: 4;1Yf,)`
 
-### 2. Menyalakan SSR dengan perintah
-topic: dbl/[serial_numb]/c
+sub topic: dbl/[serial_numb]/cmd -> untuk menerima perintah
+pub topic: dbl/[serial_numb]/sta -> untuk status: offline, online, sleep
+pub topic: dbl/[serial_numb]/rpt -> untuk report sensor reading
+```
+### 2. Live Status dblocker dr mqtt
+topic: pub topic: dbl/[serial_numb]/sta
+
+### 3. Menyalakan SSR dengan perintah
+topic: dbl/[serial_numb]/cmd
 
 message: dengan 14 sinyal 0 atau 1. 
 
@@ -44,3 +51,4 @@ h.MqttClient.Publish(topic, 1, true, payload)
 qos = 1
 retained = true
 ```
+
