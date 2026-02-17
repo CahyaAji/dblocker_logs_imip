@@ -22,8 +22,8 @@ func main() {
 	fmt.Println("Connected to Broker")
 
 	topicsToRemove := []string{
-		"dbl/STM-1001/c",
-		"dbl/SCM-1002/c",
+		"dbl/250002/c",
+		"dbl/250001/sta",
 	}
 
 	for _, topic := range topicsToRemove {
