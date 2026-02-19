@@ -33,7 +33,7 @@ uint32_t hallSensorPins[9] = { PA0, PA1, PA2, PA3, PA4, PA5, PA6, PA7, PB0 };
 MAX6675 temp1(MAX_SCK, MAX_CS_1, MAX_MISO);
 MAX6675 temp2(MAX_SCK, MAX_CS_2, MAX_MISO);
 
-// Ensure this MAC is unique for every device!
+// Config ========================
 byte mac[] = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0x00 };
 IPAddress ip(10, 88, 81, 10);
 IPAddress gateway(10, 88, 81, 1);
@@ -65,8 +65,9 @@ bool isSystemSleeping = false;
 EthernetClient ethClient;
 PubSubClient mqttClient(ethClient);
 
+// Config ========================
 void generateIds() {
-  snprintf(serial_numb, sizeof(serial_numb), "250001");
+  snprintf(serial_numb, sizeof(serial_numb), "250000");
   snprintf(topic_sub, sizeof(topic_sub), "dbl/%s/cmd", serial_numb);
   snprintf(topic_pub, sizeof(topic_pub), "dbl/%s/rpt", serial_numb);
   snprintf(topic_sta, sizeof(topic_sta), "dbl/%s/sta", serial_numb);
