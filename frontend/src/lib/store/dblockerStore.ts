@@ -1,4 +1,5 @@
 import { writable, get } from 'svelte/store';
+import { API_BASE } from '../utils/api';
 
 export interface DBlockerConfig {
     signal_ctrl: boolean;
@@ -20,7 +21,6 @@ export interface DBlocker {
 export const dblockerStore = writable<DBlocker[]>([]);
 
 // --- CONFIG ---
-const API_BASE = "http://localhost:3003/api";
 let pollingInterval: ReturnType<typeof setInterval> | undefined;
 
 

@@ -1,6 +1,10 @@
 <script lang="ts">
     import { onMount } from "svelte";
-    import { dblockerStore, type DBlocker, type DBlockerConfig } from "./store/dblockerStore";
+    import {
+        dblockerStore,
+        type DBlocker,
+        type DBlockerConfig,
+    } from "./store/dblockerStore";
 
     let editingIds: number[] = $state([]);
 
@@ -11,7 +15,7 @@
         if (editingIds.includes(blocker.id)) {
             // console.log(blocker.id, $state.snapshot(blocker).config);
             updateDBlocker(blocker.id, blocker.config);
-            editingIds = editingIds.filter(i => i !== blocker.id);
+            editingIds = editingIds.filter((i) => i !== blocker.id);
         } else {
             editingIds = [...editingIds, blocker.id];
         }
@@ -23,13 +27,14 @@
             if (!res.ok) throw new Error("Fetch dblockers failed");
             const json = await res.json();
             // Handle wrapped response { data: [...] } or direct array [...]
-            const data: DBlocker[] = Array.isArray(json) ? json : (json.data || []);
-            
+            const data: DBlocker[] = Array.isArray(json)
+                ? json
+                : json.data || [];
+
             // Sort by ID to keep the list order stable
             data.sort((a, b) => a.id - b.id);
-            
-            return data;
 
+            return data;
         } catch (error) {
             console.error("Error fetching dblockers:", error);
             return [];
@@ -68,85 +73,108 @@
             const sortedStoreData = [...storeData].sort((a, b) => a.id - b.id);
 
             if (JSON.stringify(dblockers) !== JSON.stringify(sortedStoreData)) {
-                console.log("DBlockersList: Store data changed, updating local state.");
+                console.log(
+                    "DBlockersList: Store data changed, updating local state.",
+                );
                 dblockers = sortedStoreData;
             }
         }, 500);
         return () => clearTimeout(debounceTimer);
     });
 
-    onMount(async ()=>{
+    onMount(async () => {
         dblockers = await readDBlockers();
     });
-
 </script>
 
-    <div class="list">
-        {#each dblockers as blocker (blocker.id)}
-            {@const isEditMode = editingIds.includes(blocker.id)}
-            <div class="card">
-                <div class="card-header">
-                    <div>{blocker.name}</div>
-                    {#if isEditMode}
-                    <button class="btn-edit" onclick={() => toggleEditMode(blocker)}>Apply</button>
-                    {:else}
-                    <button class="btn-edit" onclick={() => toggleEditMode(blocker)}>Edit</button>
-                    {/if}
+<div class="list">
+    {#each dblockers as blocker (blocker.id)}
+        {@const isEditMode = editingIds.includes(blocker.id)}
+        <div class="card">
+            <div class="card-header">
+                <div>{blocker.name}</div>
+                {#if isEditMode}
+                    <button
+                        class="btn-edit"
+                        onclick={() => toggleEditMode(blocker)}>Apply</button
+                    >
+                {:else}
+                    <button
+                        class="btn-edit"
+                        onclick={() => toggleEditMode(blocker)}>Edit</button
+                    >
+                {/if}
+            </div>
+            <div class="card-content">
+                <div class="col">
+                    {#each blocker.config.slice(0, 3) as config, index}
+                        <div class="sector">
+                            <div class="section-title">Sector {index + 1}</div>
+                            <div class="control-group">
+                                <div class="control-row">
+                                    <div class="control-label">Blcker RC</div>
+                                    <label class="switch">
+                                        <input
+                                            type="checkbox"
+                                            bind:checked={config.signal_ctrl}
+                                            disabled={!isEditMode}
+                                        />
+                                        <span class="slider"></span>
+                                    </label>
+                                </div>
+                                <div class="control-row">
+                                    <div class="control-label">Blcker GPS</div>
+                                    <label class="switch">
+                                        <input
+                                            type="checkbox"
+                                            bind:checked={config.signal_gps}
+                                            disabled={!isEditMode}
+                                        />
+                                        <span class="slider"></span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    {/each}
                 </div>
-                <div class="card-content">
-                    <div class="col">
-                        {#each blocker.config.slice(0, 3) as config, index}
-                            <div class="sector">
-                                <div class="section-title">Sector {index + 1}</div>
-                                <div class="control-group">
-                                    <div class="control-row">
-                                        <div class="control-label">Blcker RC</div>
-                                        <label class="switch">
-                                        <input type="checkbox" bind:checked={config.signal_ctrl} disabled={!isEditMode}>
+                <div class="col">
+                    {#each blocker.config.slice(3, 6) as config, index}
+                        <div class="sector">
+                            <div class="section-title">Sector {index + 4}</div>
+                            <div class="control-group">
+                                <div class="control-row">
+                                    <div class="control-label">Blcker RC</div>
+                                    <label class="switch">
+                                        <input
+                                            type="checkbox"
+                                            bind:checked={config.signal_ctrl}
+                                            disabled={!isEditMode}
+                                        />
                                         <span class="slider"></span>
-                                        </label>
-                                    </div>
-                                    <div class="control-row">
-                                        <div class="control-label">Blcker GPS</div>
-                                        <label class="switch">
-                                        <input type="checkbox" bind:checked={config.signal_gps} disabled={!isEditMode}>
+                                    </label>
+                                </div>
+                                <div class="control-row">
+                                    <div class="control-label">Blcker GPS</div>
+                                    <label class="switch">
+                                        <input
+                                            type="checkbox"
+                                            bind:checked={config.signal_gps}
+                                            disabled={!isEditMode}
+                                        />
                                         <span class="slider"></span>
-                                        </label>
-                                    </div>
+                                    </label>
                                 </div>
                             </div>
-                        {/each}
-                    </div>
-                    <div class="col">
-                        {#each blocker.config.slice(3, 6) as config, index}
-                            <div class="sector">
-                                <div class="section-title">Sector {index + 4}</div>
-                                <div class="control-group">
-                                    <div class="control-row">
-                                        <div class="control-label">Blcker RC</div>
-                                        <label class="switch">
-                                        <input type="checkbox" bind:checked={config.signal_ctrl} disabled={!isEditMode}>
-                                        <span class="slider"></span>
-                                        </label>
-                                    </div>
-                                    <div class="control-row">
-                                        <div class="control-label">Blcker GPS</div>
-                                        <label class="switch">
-                                        <input type="checkbox" bind:checked={config.signal_gps} disabled={!isEditMode}>
-                                        <span class="slider"></span>
-                                        </label>
-                                    </div>
-                                </div>
-                            </div>
-                        {/each}
-                    </div>
+                        </div>
+                    {/each}
                 </div>
             </div>
-        {:else}
-            <div class="empty">No DBlockers found</div>
-        {/each}
-    </div>
-    
+        </div>
+    {:else}
+        <div class="empty">No DBlockers found</div>
+    {/each}
+</div>
+
 <style>
     .list {
         display: flex;
