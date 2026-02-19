@@ -10,10 +10,19 @@ import (
 
 type Client interface {
 	Publish(topic string, qos byte, retained bool, payload any) error
-	Subscribe(topic string, qos byte, handler paho.MessageHandler) error
+	Subscribe(topic string, qos byte, handler Handler) error
 	Unsubscribe(topics ...string) error
 	Close()
 }
+
+// Message wraps the subset of MQTT message fields that handlers typically need.
+type Message struct {
+	Topic   string
+	Payload []byte
+}
+
+// Handler is a simplified message handler signature decoupled from the paho dependency.
+type Handler func(Message)
 
 type mqttClient struct {
 	pahoClient paho.Client
@@ -53,8 +62,15 @@ func (m *mqttClient) Publish(topic string, qos byte, retained bool, payload any)
 	return token.Error()
 }
 
-func (m *mqttClient) Subscribe(topic string, qos byte, handler paho.MessageHandler) error {
-	token := m.pahoClient.Subscribe(topic, qos, handler)
+func (m *mqttClient) Subscribe(topic string, qos byte, handler Handler) error {
+	var wrapped paho.MessageHandler
+	if handler != nil {
+		wrapped = func(_ paho.Client, msg paho.Message) {
+			handler(Message{Topic: msg.Topic(), Payload: msg.Payload()})
+		}
+	}
+
+	token := m.pahoClient.Subscribe(topic, qos, wrapped)
 	token.Wait()
 	return token.Error()
 }

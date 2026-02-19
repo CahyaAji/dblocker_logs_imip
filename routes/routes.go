@@ -21,6 +21,7 @@ func SetupRouter(db *gorm.DB, mqttClient mqtt.Client) *gin.Engine {
 	userRepo := repository.NewUserRepository(db)
 
 	deviceControlHandler := handlers.NewDeviceControlHandler(mqttClient, deviceRepo)
+	mqttBridgeHandler := handlers.NewMqttBridgeHandler(mqttClient)
 
 	deviceHandler := handlers.NewDeviceHandler(deviceRepo)
 	dblockerHandler := handlers.NewDBlockerHandler(dblockerRepo, mqttClient)
@@ -66,6 +67,9 @@ func SetupRouter(db *gorm.DB, mqttClient mqtt.Client) *gin.Engine {
 	api.GET("/users/:id", userHandler.GetUserByID)
 	api.PUT("/users/:id", userHandler.UpdateUser)
 	api.DELETE("/users/:id", userHandler.DeleteUser)
+
+	// MQTT bridge (Server-Sent Events)
+	api.GET("/mqtt/stream", mqttBridgeHandler.Stream)
 
 	return r
 }
